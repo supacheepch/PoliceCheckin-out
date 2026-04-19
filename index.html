@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบลงเวลาเข้า-ออกเวร | ตำรวจ</title>
+  <meta name="description" content="ระบบบันทึกเวลาเข้า-ออกเวรตำรวจ เชื่อมต่อ Google Sheet">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Main CSS -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+  <!-- ── Toast Notifications ── -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- ── Main Wrapper ── -->
+  <div class="page-wrapper">
+
+    <!-- ══ HEADER ══════════════════════════════════ -->
+    <header class="site-header">
+      <div class="header-emblem">👮</div>
+      <div class="header-text">
+        <h1>ระบบลงเวลาเข้า-ออกเวร</h1>
+        <p id="stationName">สถานีตำรวจ &nbsp;|&nbsp; Police Time Checkout System</p>
+      </div>
+      <div class="header-clock">
+        <div class="clock-time" id="clockTime">00:00:00</div>
+        <div class="clock-date" id="clockDate">--</div>
+      </div>
+    </header>
+
+    <!-- ══ STATS ════════════════════════════════════ -->
+    <div class="stats-grid">
+      <div class="stat-item total">
+        <div class="stat-value" id="statTotal">0</div>
+        <div class="stat-label">ตำรวจทั้งหมด</div>
+      </div>
+      <div class="stat-item active">
+        <div class="stat-value" id="statActive">0</div>
+        <div class="stat-label">กำลังปฏิบัติงาน</div>
+      </div>
+      <div class="stat-item off">
+        <div class="stat-value" id="statOff">0</div>
+        <div class="stat-label">เช็คเอาต์แล้ว</div>
+      </div>
+    </div>
+
+    <!-- ══ MAIN GRID ════════════════════════════════ -->
+    <div class="main-grid">
+
+      <!-- ── Check-in/out Panel ── -->
+      <div class="card">
+        <div class="card-title">
+          <div class="icon">🕐</div>
+          บันทึกเวลาเข้า-ออกเวร
+        </div>
+
+        <!-- Select Officer -->
+        <div class="form-group">
+          <label for="officerSelect">เลือกชื่อตำรวจ</label>
+          <select id="officerSelect" onchange="onSelectChange()">
+            <option value="">-- กำลังโหลดรายชื่อ... --</option>
+          </select>
+        </div>
+
+        <!-- Officer Info Badge (แสดงหลังเลือก) -->
+        <div class="officer-info" id="officerInfo">
+          <div class="officer-name" id="infoName">--</div>
+          <div class="officer-rank" id="infoRank">--</div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="btn-group">
+          <button id="btnCheckIn"
+                  class="btn btn-checkin"
+                  onclick="recordAction('in')">
+            ✅ เช็คอิน
+          </button>
+          <button id="btnCheckOut"
+                  class="btn btn-checkout"
+                  onclick="recordAction('out')">
+            🚪 เช็คเอาต์
+          </button>
+        </div>
+
+        <!-- Config Hint -->
+        <div class="config-panel" style="margin-top:16px;">
+          <strong>⚙️ ตั้งค่า Google Sheet</strong><br>
+          แก้ไข <code>js/config.js</code> → ใส่ <code>SHEET_ID</code> ของคุณ<br>
+          แล้ว Publish Sheet เป็น CSV (File → Share → Publish to web)
+        </div>
+      </div>
+
+      <!-- ── Officer List Panel ── -->
+      <div class="card">
+        <div class="card-title">
+          <div class="icon">👥</div>
+          รายชื่อตำรวจ
+          <span class="source-badge" id="sourceBadge" style="margin-left:auto;">
+            <span>●</span> กำลังโหลด...
+          </span>
+          <button class="btn-reload" id="btnReload" onclick="loadOfficers()" title="รีโหลดข้อมูล">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Officer Cards (คลิกเพื่อเลือก) -->
+        <div id="officerListWrapper">
+          <div style="text-align:center;padding:30px;color:var(--text-muted);">
+            <span class="spinner"></span> กำลังโหลด...
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Log Table (Full Width) ── -->
+      <div class="card card-full">
+        <div class="table-header">
+          <div class="card-title" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">
+            <div class="icon">📋</div>
+            ประวัติวันนี้
+          </div>
+        </div>
+
+        <div class="log-table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>สถานะ</th>
+                <th>ชื่อ-สกุล</th>
+                <th>สังกัด</th>
+                <th>เวลา</th>
+                <th>วันที่</th>
+              </tr>
+            </thead>
+            <tbody id="logTbody">
+              <tr class="loading-row">
+                <td colspan="5">
+                  <div class="empty-state">
+                    <div class="icon">📋</div>
+                    <p>ยังไม่มีการเช็คอิน/เช็คเอาต์วันนี้</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /main-grid -->
+
+  </div><!-- /page-wrapper -->
+
+  <!-- ── Scripts (โหลดตามลำดับ) ── -->
+  <script src="js/config.js"></script>
+  <script src="js/googlesheet.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
