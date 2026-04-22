@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>บันทึกเหตุการณ์/ลงประวัติ | Police Time Checkout</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --police-blue: #1a237e;
+            --police-light: #e8eaf6;
+            --bg-soft: #f0f2f5;
+            --card-radius: 24px;
+            --deep-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+        }
+
+        body { font-family: 'Sarabun', sans-serif; background-color: var(--bg-soft); color: #2c3e50; }
+        .font-inter { font-family: 'Inter', sans-serif; }
+
+        .p-card { background: #ffffff; border-radius: var(--card-radius); border: none; box-shadow: var(--deep-shadow); }
+        .form-control-luxe { border-radius: 14px; padding: 0.8rem 1.2rem; border: 2px solid #edf2f7; background: #f8fafc; }
+        .form-control-luxe:focus { border-color: var(--police-blue); box-shadow: 0 0 0 4px rgba(26, 35, 126, 0.1); background: #fff; }
+        
+        /* ══ EVENT TIMELINE ══ */
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+            margin-top: 20px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 3px;
+            background: #e9ecef;
+            border-radius: 3px;
+        }
+
+        .event-card {
+            position: relative;
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+            margin-bottom: 25px;
+            border: 1px solid #f8f9fa;
+        }
+
+        .event-card::before {
+            content: '';
+            position: absolute;
+            left: -36px;
+            top: 20px;
+            width: 15px;
+            height: 15px;
+            background: var(--police-blue);
+            border-radius: 50%;
+            box-shadow: 0 0 0 4px white, 0 0 0 6px var(--police-light);
+        }
+
+        .event-card.event-urgent::before {
+            background: #dc3545;
+            box-shadow: 0 0 0 4px white, 0 0 0 6px #f8d7da;
+        }
+
+        .event-card.event-planning::before {
+            background: #fd7e14;
+            box-shadow: 0 0 0 4px white, 0 0 0 6px #ffe5d0;
+        }
+
+        .event-time { font-weight: 800; color: var(--police-blue); margin-bottom: 5px; display: block;}
+        .event-meta { font-size: 0.85rem; color: #6c757d; display: flex; gap: 15px; margin-top: 10px; }
+        .event-meta i { margin-right: 5px; color: var(--police-blue); }
+
+    </style>
+</head>
+
+<body>
+    <div class="container py-4">
+        
+        <!-- Header -->
+        <div class="d-flex align-items-center mb-4">
+            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                <i class="fa-solid fa-calendar-days"></i>
+            </div>
+            <div class="ms-3">
+                <h2 class="fw-800 mb-0">กระดานภารกิจ (Events Log)</h2>
+                <p class="text-muted mb-0">ลงบันทึกเหตุการณ์และแผนงาน เพื่อให้ทุกคนรับทราบ</p>
+            </div>
+            <div class="ms-auto">
+                <a href="main.html" class="btn btn-outline-secondary rounded-pill px-4 fw-bold">
+                    <i class="fa-solid fa-arrow-left me-2"></i> กลับหน้าหลัก
+                </a>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- POST NEW EVENT FORM -->
+            <div class="col-lg-5">
+                <div class="card p-card h-100 border-top border-4 border-primary">
+                    <div class="card-body p-4">
+                        <h5 class="fw-800 mb-4"><i class="fa-solid fa-pen-to-square me-2 text-primary"></i> สร้างภารกิจ / แจ้งเหตุ</h5>
+                        
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">ประเภท</label>
+                            <select class="form-control form-control-luxe form-select">
+                                <option value="planning">📋 แผนปฏิบัติงานล่วงหน้า</option>
+                                <option value="patrol">🚓 ออกสายตรวจปกติ</option>
+                                <option value="urgent">🚨 วินิจฉัยข้อสั่งการด่วน</option>
+                                <option value="general">📝 บันทึกทั่วไป</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">รายละเอียดภารกิจ</label>
+                            <textarea class="form-control form-control-luxe" rows="3" placeholder="เช่น ตั้งด่านตรวจกวดขันวินัยจราจรจุด A"></textarea>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-6">
+                                <label class="form-label small fw-bold">วันที่</label>
+                                <input type="date" class="form-control form-control-luxe">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-bold">เวลา</label>
+                                <input type="time" class="form-control form-control-luxe">
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold">สถานที่ / พิกัด</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-transparent border-0"><i class="fa-solid fa-location-dot text-danger"></i></span>
+                                <input type="text" class="form-control form-control-luxe" placeholder="ระบุสถานที่">
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary w-100 rounded-pill py-3 fw-bold fs-6 shadow-sm shadow">
+                            <i class="fa-solid fa-bullhorn me-2"></i> ประกาศภารกิจ
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TIMELINE LIST -->
+            <div class="col-lg-7">
+                <div class="card p-card h-100">
+                    <div class="card-body p-4">
+                        <h5 class="fw-800 mb-4"><i class="fa-solid fa-list-check me-2 text-primary"></i> ภารกิจล่าสุดของสถานี</h5>
+                        
+                        <div class="timeline">
+                            
+                            <!-- Item 1 -->
+                            <div class="event-card event-urgent">
+                                <span class="event-time font-inter text-danger">15:30 น. (วันนี้)</span>
+                                <h5 class="fw-800 mb-2">ระงับเหตุทะเลาะวิวาท</h5>
+                                <p class="text-muted mb-0 small">ได้รับแจ้งเหตุวัยรุ่นรวมกลุ่มทะเลาะวิวาท จัดชุดสายตรวจเคลื่อนที่เร็วเข้าตรวจสอบระงับเหตุ</p>
+                                <div class="event-meta">
+                                    <span><i class="fa-solid fa-location-dot text-danger"></i> ตลาดหน้าเทศบาล</span>
+                                    <span><i class="fa-solid fa-user-shield text-info"></i> ร.ต.อ. สมชาย และทีม</span>
+                                </div>
+                            </div>
+
+                            <!-- Item 2 -->
+                            <div class="event-card event-planning">
+                                <span class="event-time font-inter text-warning">20:00 น. (พรุ่งนี้)</span>
+                                <h5 class="fw-800 mb-2">แผนปฏิบัติการตั้งจุดตรวจกวดขัน</h5>
+                                <p class="text-muted mb-0 small">ตั้งด่านตรวจแอลกอฮอล์และป้องกันอาชญากรรม กำลังพล 10 นาย</p>
+                                <div class="event-meta">
+                                    <span><i class="fa-solid fa-location-dot text-danger"></i> ถนนสายหลัก หน้าปั๊ม ปตท.</span>
+                                    <span><i class="fa-solid fa-user-shield text-info"></i> พ.ต.ต. ยอดพิทักษ์ เป็นผู้ควบคุม</span>
+                                </div>
+                            </div>
+
+                            <!-- Item 3 -->
+                            <div class="event-card">
+                                <span class="event-time font-inter">09:00 น. (12 เม.ย.)</span>
+                                <h5 class="fw-800 mb-2">ตรวจเยี่ยมชุมชนสัมพันธ์</h5>
+                                <p class="text-muted mb-0 small">มอบนโยบายและสอบถามปัญหายาเสพติดในชุมชน</p>
+                                <div class="event-meta">
+                                    <span><i class="fa-solid fa-location-dot text-danger"></i> หมู่ 4 บ้านหนองน้ำ</span>
+                                    <span><i class="fa-solid fa-user-shield text-info"></i> สายตรวจเดินเท้า</span>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

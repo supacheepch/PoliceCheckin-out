@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดการกำลังพล | Police Admin</title>
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --police-blue: #1a237e;
+            --police-light: #e8eaf6;
+            --police-accent: #ffb300;
+            --bg-soft: #f0f2f5;
+            --card-radius: 24px;
+            --deep-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: var(--bg-soft);
+            color: #2c3e50;
+        }
+
+        .dashboard-header {
+            background: #ffffff;
+            border-radius: var(--card-radius);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--deep-shadow);
+            border-left: 8px solid var(--police-blue);
+        }
+
+        .p-card {
+            background: white;
+            border-radius: var(--card-radius);
+            box-shadow: var(--deep-shadow);
+            border: none;
+            overflow: hidden;
+        }
+
+        .table-custom {
+            margin-bottom: 0;
+        }
+
+        .table-custom th {
+            background-color: #f8fafc;
+            color: #64748b;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            padding: 1rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .table-custom td {
+            padding: 1rem;
+            vertical-align: middle;
+            border-bottom: 1px solid #f1f5f9;
+            color: #334155;
+            font-weight: 500;
+        }
+
+        .table-custom tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .table-custom tbody tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .avatar-circle {
+            width: 40px;
+            height: 40px;
+            background: var(--police-light);
+            color: var(--police-blue);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 12px;
+        }
+
+        .status-badge {
+            padding: 0.35rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .status-y {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .status-n {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .search-box {
+            border-radius: 20px;
+            padding: 1.2rem 1.5rem 1.2rem 3.5rem;
+            border: none;
+            box-shadow: var(--deep-shadow);
+            font-size: 1.1rem;
+            font-weight: 500;
+            width: 100%;
+            transition: all 0.3s;
+        }
+
+        .search-container {
+            max-width: 600px;
+            margin: -1rem auto 2rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--police-blue);
+            opacity: 0.5;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border: 2px solid var(--police-blue);
+        }
+
+        /* Modal Premium Styling */
+        .modal-content {
+            border-radius: 20px;
+            border: none;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            border-radius: 20px 20px 0 0;
+            padding: 1.5rem;
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .form-control-luxe,
+        .form-select-luxe {
+            border-radius: 12px;
+            padding: 0.8rem 1rem;
+            border: 2px solid #e2e8f0;
+            background-color: #f8fafc;
+            font-weight: 500;
+        }
+
+        .form-control-luxe:focus,
+        .form-select-luxe:focus {
+            border-color: var(--police-blue);
+            box-shadow: none;
+            background-color: white;
+        }
+
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            pointer-events: all;
+            cursor: wait;
+        }
+
+        .d-none {
+            display: none !important;
+        }
+
+        .login-card {
+            max-width: 450px;
+            margin: 40px auto;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Fullscreen Loading Spinner -->
+    <div id="loadingOverlay">
+        <i class="fa-solid fa-circle-notch fa-spin text-primary" style="font-size: 3rem;"></i>
+        <div class="mt-3 fw-bold text-muted">กำลังซิงค์ฐานข้อมูล...</div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1060;" id="toastContainer"></div>
+
+    <!-- ══ VIEW: LOGIN ══ -->
+    <div id="view-auth" class="container py-4">
+        <div class="card p-card login-card p-4 p-md-5">
+            <div class="text-center mb-4">
+                <i class="fa-solid fa-user-shield fa-3x" style="color: var(--police-blue);"></i>
+                <h2 class="fw-800 mt-3 mb-2">ลงชื่อเข้าสู่โหมดผู้ดูแล</h2>
+                <p class="text-muted small fw-500">จำกัดสิทธิ์เฉพาะระดับผู้บังคับบัญชา<br>(รอง ผบ. และ ผบ.ตร.)</p>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted text-start text-uppercase w-100">อีเมลส่วนตัว</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-0"><i
+                            class="fa-regular fa-envelope text-muted"></i></span>
+                    <input type="email" id="emailInput" class="form-control form-control-luxe border-0 bg-light"
+                        placeholder="ระบุอีเมลของคุณ" onkeypress="if(event.key === 'Enter') loginWithEmail()">
+                </div>
+            </div>
+
+            <button class="btn btn-primary py-3 w-100 fw-bold rounded-4 shadow-sm" id="btnLogin"
+                onclick="loginWithEmail()" style="background-color: var(--police-blue); border: none;">
+                ยืนยันตัวตน <i class="fa-solid fa-arrow-right-to-bracket ms-2"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="view-main" class="container py-4 d-none">
+
+        <div class="dashboard-header d-flex flex-column flex-md-row align-items-center justify-content-between">
+            <div class="d-flex align-items-center mb-4 mb-md-0">
+                <div class="p-card me-3 d-flex align-items-center justify-content-center shadow-sm"
+                    style="width: 70px; height: 70px; background: var(--police-blue); color: white;">
+                    <i class="fa-solid fa-users-gear fs-3"></i>
+                </div>
+                <div>
+                    <h1 class="h4 fw-800 mb-0" style="font-weight: 800;">ระบบจัดการกำลังพล</h1>
+                    <p class="mb-0 text-muted small fw-600" style="font-weight: 600;">
+                        <span id="lastUpdate">กำลังอัปเดต...</span>
+                        <span class="mx-2">•</span>
+                        <button class="btn btn-sm btn-outline-primary border-0 py-0 px-2 fw-bold"
+                            onclick="fetchData(true)">
+                            <i id="refreshIcon" class="fa-solid fa-arrows-rotate me-1"></i> รีเฟรชข้อมูล
+                        </button>
+                    </p>
+                </div>
+            </div>
+            <div class="text-md-end">
+                <button class="btn btn-outline-danger fw-bold rounded-4 px-3" onclick="logoutAdmin()">
+                    <i class="fa-solid fa-power-off me-1"></i> ออกจากระบบจัดการ
+                </button>
+            </div>
+        </div>
+
+        <!-- Calculations Grid -->
+        <div class="row g-4 mb-4">
+            <!-- Calculation Tool (Moved from Dashboard) -->
+            <div class="col-lg-6">
+                <div class="p-card h-100 p-4 shadow-sm" style="border: 2px dashed #cbd5e1;">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fa-solid fa-calculator text-primary fs-3 me-3"></i>
+                        <div>
+                            <h5 class="fw-bold mb-0">ระบบคำนวณสรุปสัปดาห์ (เงินเดือน)</h5>
+                            <div class="small text-muted">สรุปยอดชั่วโมงการทำงานของสัปดาห์นั้นๆ</div>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <select id="calcSheetName" class="form-select form-select-luxe border-0 bg-light fw-bold text-dark">
+                            <option value="">-- เลือกสัปดาห์เพื่อคำนวณ --</option>
+                        </select>
+                        <button class="btn btn-primary px-4 fw-bold" onclick="triggerCalculation()">
+                            สร้างสรุปผล <i class="fa-solid fa-arrow-right ms-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reward Calculation Tool -->
+            <div class="col-lg-6">
+                <div class="p-card h-100 p-4 shadow-sm" style="border: 2px dashed #ffd700;">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fa-solid fa-trophy text-warning fs-3 me-3"></i>
+                        <div>
+                            <h5 class="fw-bold mb-0 text-warning" style="text-shadow: 0 1px 2px rgba(0,0,0,0.1)">ยอดรางวัล (Wall of Fame)</h5>
+                            <div class="small text-muted">สรุปยอดประจำงวด 1-10, 11-20, 21-สิ้นเดือน</div>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <select id="calcRewardPeriod" class="form-select form-select-luxe border-0 bg-light fw-bold text-dark">
+                            <option value="">-- เลือกงวดรางวัล --</option>
+                        </select>
+                        <button class="btn btn-warning px-4 fw-bold text-dark" onclick="triggerRewardCalculation()">
+                            ส่งขึ้น Wall <i class="fa-solid fa-star ms-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="search-container">
+            <i class="fa-solid fa-search search-icon"></i>
+            <input type="text" id="searchInput" class="search-box" placeholder="ค้นหาชื่อ, รหัส, อีเมล..."
+                onkeyup="filterTable()">
+        </div>
+
+        <div class="p-card">
+            <div class="table-responsive">
+                <table class="table table-custom">
+                    <thead>
+                        <tr>
+                            <th>รหัสประจำตัว</th>
+                            <th>ข้อมูลเจ้าหน้าที่</th>
+                            <th>ติดต่อ (E-MAIL)</th>
+                            <th>ยศ (RANK)</th>
+                            <th>สถานะระบบ</th>
+                            <th class="text-end">การจัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="directoryTbody">
+                        <!-- Data injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Rank Management -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 mt-5 gap-3">
+            <div>
+                <h4 class="fw-800 mb-1" style="font-weight: 800;"><i
+                        class="fa-solid fa-layer-group text-primary me-2"></i> โครงสร้างชั้นยศ</h4>
+                <p class="text-muted small mb-0 fw-600">จัดการรายชื่อระดับยศในกองกำกับการ</p>
+            </div>
+            <div>
+                <button class="btn btn-primary py-2 px-4 fw-bold rounded-pill shadow-sm" onclick="promptAddRank()"
+                    style="background-color: var(--police-blue); border: none;">
+                    <i class="fa-solid fa-plus me-1"></i> เพิ่มยศใหม่
+                </button>
+            </div>
+        </div>
+
+        <div class="p-card mb-5">
+            <div class="table-responsive">
+                <table class="table table-custom">
+                    <thead>
+                        <tr>
+                            <th width="15%">รหัส (ID)</th>
+                            <th>รายการชั้นยศ (RANK_NAME)</th>
+                            <th class="text-end" width="20%">การจัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rankTbody">
+                        <!-- Data injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Editor Modal -->
+    <div class="modal fade" id="editorModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i
+                            class="fa-solid fa-pen-to-square text-primary me-2"></i>แก้ไขข้อมูลกำลังพล</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editorForm" onsubmit="saveChanges(event)">
+
+                        <div class="mb-4 text-center">
+                            <div class="position-relative d-inline-block">
+                                <img src="" id="modalImgPreview" class="rounded-circle border shadow-sm" 
+                                    style="width: 80px; height: 80px; object-fit: cover; background: #eee;"
+                                    onerror="this.src='https://ui-avatars.com/api/?name=Police&background=random'">
+                                <div class="avatar-circle mx-auto mb-2 d-none"
+                                    style="width: 80px; height: 80px; font-size: 1.8rem;" id="modalAvatar">P</div>
+                            </div>
+                            <div class="fs-5 fw-bold mt-2" id="modalCodeDisplay">000</div>
+                        </div>
+
+                        <input type="hidden" id="editCode">
+
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">ลิงก์รูปภาพประจำตัว (Discord PIC URL)</label>
+                            <input type="url" class="form-control form-control-luxe" id="editPicUrl" 
+                                placeholder="วางลิงก์รูปภาพที่นี่ (เช่น จาก Discord)" 
+                                oninput="document.getElementById('modalImgPreview').src = this.value || 'https://ui-avatars.com/api/?name=P&background=random'">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">ชื่อ - สกุล</label>
+                            <input type="text" class="form-control form-control-luxe" id="editName" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">E-MAIL</label>
+                            <input type="text" class="form-control form-control-luxe" id="editEmail" required>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-6">
+                                <label class="form-label text-muted small fw-bold">ยศ (RANK)</label>
+                                <select class="form-select form-select-luxe" id="editRank" required>
+                                    <option value="">-- เลือกยศ --</option>
+                                    <!-- Options injected here -->
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label text-muted small fw-bold">สถานะ (ACTIVE)</label>
+                                <select class="form-select form-select-luxe" id="editStatus" required>
+                                    <option value="Y">✅ ใช้งานงาน (Active)</option>
+                                    <option value="N">❌ ระงับ (Inactive)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary py-3 fw-bold rounded-4 shadow-sm" id="btnSave">
+                                <i class="fa-solid fa-floppy-disk me-2"></i> บันทึกการอัปเดต
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rank Modal -->
+    <div class="modal fade" id="rankModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i
+                            class="fa-solid fa-layer-group text-primary me-2"></i>เพิ่มโครงสร้างชั้นยศ</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="rankForm" onsubmit="submitNewRank(event)">
+                        <div class="mb-4">
+                            <label class="form-label text-muted small fw-bold">ชื่อยศใหม่ (RANK NAME)</label>
+                            <input type="text" class="form-control form-control-luxe" id="newRankName"
+                                placeholder="เช่น สิบตำรวจเอก..." required>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary py-3 fw-bold rounded-4 shadow-sm"
+                                id="btnSaveRank">
+                                <i class="fa-solid fa-check me-2"></i> บันทึกยศใหม่
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Config & Logic -->
+    <script>
+        // CONFIG
+        const CONFIG = {
+            CSV_URL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTAmJRn6O3ghHHFAg04RKU3PNU4_-vMF1zA5UZ1sAAJDcMc9Js8t-lLxhkKwkLYKvqK2_8yFHQnG-Lk/pub?output=csv',
+            WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbzbX9M52hcMTnyFZMZdV86ZuB9qF_uBifuA7vlFSu9J0WwKRPJ-jI39hssIAhavDjb3/exec',
+            REFRESH_INTERVAL: 60000 // 1 Minute
+        };
+        // State
+        let policeUsers = [];
+        let rankList = [];
+        let allWeeks = [];
+        let rewardList = [];
+        let editorModalInstance;
+        let rankModalInstance;
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            editorModalInstance = new bootstrap.Modal(document.getElementById('editorModal'));
+            rankModalInstance = new bootstrap.Modal(document.getElementById('rankModal'));
+
+            // ดึงข้อมูลเตรียมไว้ล่วงหน้า
+            fetchData();
+
+            // เช็ค Session แอดมินว่าเคยล็อกอินไหม
+            if (localStorage.getItem('police_admin_email')) {
+                // รอให้ข้อมูลโหลดเสร็จก่อนค่อยสลับหน้า
+                setTimeout(() => {
+                    const savedEmail = localStorage.getItem('police_admin_email');
+                    document.getElementById('emailInput').value = savedEmail;
+                    loginWithEmail(true);
+                }, 1000); // ดีเลย์เล็กน้อยรอ fetch API (แบบรวบรัด)
+            }
+        });
+
+        function loginWithEmail(isAuto = false) {
+            const email = document.getElementById('emailInput').value.trim();
+            if (!email) {
+                if (!isAuto) showToast('error', 'แจ้งเตือน', 'กรุณากรอกอีเมลก่อนดำเนินการ');
+                return;
+            }
+
+            const btn = document.getElementById('btnLogin');
+            if (btn) btn.disabled = true;
+
+            // ตรวจสอบว่าพบลายชื่อหรือไม่
+            const user = policeUsers.find(u => (u.POLICE_EMAIL || u['E-MAIL'] || '').toLowerCase() === email.toLowerCase());
+
+            if (user) {
+                const rank = user.ROLE || user.RANK || '';
+                // เช็คสิทธิ์: ให้เฉพาะ รอง ผบ. และ ผบ.ตร.
+                if (rank === 'รอง ผบ.' || rank === 'ผบ.ตร.') {
+                    localStorage.setItem('police_admin_email', email);
+                    document.getElementById('view-auth').classList.add('d-none');
+                    document.getElementById('view-main').classList.remove('d-none');
+                    if (!isAuto) showToast('success', 'ยืนยันตัวตนสำเร็จ', `ยินดีต้อนรับ ${user.POLICE_NAME || user.NAME} เข้าสู่โหมดผู้ดูแล`);
+                } else {
+                    showToast('error', 'คุณไม่มีสิทธิ์เข้าถึง', 'ระบบนี้จำกัดสิทธิ์เฉพาะระดับผู้บังคับบัญชาเท่านั้น');
+                    localStorage.removeItem('police_admin_email');
+                }
+            } else {
+                if (!isAuto) showToast('error', 'ไม่พบรายชื่อ', 'อีเมลนี้ไม่มีในระบบฐานข้อมูลกำลังพล');
+                localStorage.removeItem('police_admin_email');
+            }
+
+            if (btn) btn.disabled = false;
+        }
+
+        function renderTableRank() {
+            const tbody = document.getElementById('rankTbody');
+
+            if (!rankList || rankList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-muted fw-bold">ไม่พบข้อมูลชั้นยศ</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = rankList.map(r => {
+                const id = r.RANK_ID || r['ID'] || r['RANK_ID'] || '-';
+                const name = r.RANK_NAME || r['RANK_NAME'] || '-';
+
+                return `
+                    <tr>
+                        <td class="font-monospace fw-bold text-primary">#${id}</td>
+                        <td class="fw-bold">${name}</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-danger shadow-sm fw-bold border" onclick="deleteRank('${id}', '${name}')">
+                                <i class="fa-solid fa-trash me-1"></i> ลบ
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function promptAddRank() {
+            document.getElementById('newRankName').value = '';
+            rankModalInstance.show();
+        }
+
+        async function submitNewRank(e) {
+            e.preventDefault();
+            const rankName = document.getElementById('newRankName').value.trim();
+            if (!rankName) return;
+
+            const btnSaveRank = document.getElementById('btnSaveRank');
+            btnSaveRank.disabled = true;
+            btnSaveRank.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin me-2"></i> กำลังบันทึก...';
+
+            showToast('success', 'กำลังดำเนินการ', 'กำลังเพิ่มข้อมูล...');
+
+            const payload = {
+                action: 'manageRank',
+                subAction: 'ADD',
+                RANK_NAME: rankName
+            };
+
+            await fetchRankAction(payload);
+
+            rankModalInstance.hide();
+            btnSaveRank.disabled = false;
+            btnSaveRank.innerHTML = '<i class="fa-solid fa-check me-2"></i> บันทึกยศใหม่';
+        }
+
+        async function deleteRank(id, name) {
+            if (!confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบยศ "${name}" ?`)) return;
+
+            showToast('success', 'กำลังดำเนินการ', 'กำลังลบข้อมูล...');
+
+            const payload = {
+                action: 'manageRank',
+                subAction: 'DELETE',
+                RANK_ID: id
+            };
+
+            await fetchRankAction(payload);
+        }
+
+        async function fetchRankAction(payload) {
+            try {
+                const response = await fetch(CONFIG.WEB_APP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    showToast('success', 'สำเร็จ', result.message);
+                    await fetchData(true); // โหลดใหม่
+                } else {
+                    showToast('error', 'ไม่สำเร็จ', result.message);
+                }
+            } catch (err) {
+                console.error("Manage Rank Error:", err);
+                showToast('error', 'ข้อผิดพลาด', 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
+            }
+        }
+
+        function logoutAdmin() {
+            localStorage.removeItem('police_admin_email');
+            document.getElementById('view-main').classList.add('d-none');
+            document.getElementById('view-auth').classList.remove('d-none');
+            document.getElementById('emailInput').value = '';
+            showToast('success', 'ออกจากระบบ', 'ออกจากกระดานผู้ดูแลเรียบร้อยแล้ว');
+        }
+
+        async function fetchData(isManual = false) {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const refreshIcon = document.getElementById('refreshIcon');
+            const lastUpdate = document.getElementById('lastUpdate');
+            const btnRefresh = refreshIcon ? refreshIcon.closest('button') : null;
+
+            // ทุกกรณีแสดง overlay เต็มจอเสมอ ไม่ว่า manual หรือ Auto
+            loadingOverlay.style.display = 'flex';
+            document.body.style.pointerEvents = 'none';
+            if (btnRefresh) btnRefresh.disabled = true;
+            if (lastUpdate) lastUpdate.textContent = 'กำลังอัปเดต...';
+
+            try {
+                const response = await fetch(CONFIG.WEB_APP_URL + "?load=all");
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    policeUsers = result.data.police_users || [];
+                    rankList = result.data.rank_police || [];
+                    allWeeks = (result.data.week_master || []).reverse();
+                    rewardList = (result.data.reward_master || []).reverse();
+
+                    populateWeekDropdown();
+                    populateRewardDropdown();
+                    populateRankDropdown();
+                    renderTable();
+                    renderTableRank();
+
+                    const now = new Date();
+                    lastUpdate.textContent = `อัปเดตล่าสุด: ${now.toLocaleTimeString('th-TH')}`;
+                } else {
+                    showToast('error', 'ข้อผิดพลาดเซิร์ฟเวอร์', result.message);
+                }
+            } catch (e) {
+                console.error("Error connecting to GAS:", e);
+                showToast('error', 'การเชื่อมต่อล้มเหลว', 'ไม่สามารถดึงข้อมูลจากฐานข้อมูลได้');
+                if (lastUpdate) lastUpdate.textContent = 'ตัดการเชื่อมต่อ';
+            } finally {
+                loadingOverlay.style.display = 'none';
+                document.body.style.pointerEvents = '';
+                if (btnRefresh) btnRefresh.disabled = false;
+            }
+        }
+
+        function populateWeekDropdown() {
+            const select = document.getElementById('calcSheetName');
+            if (!select) return;
+            const currentSelection = select.value;
+
+            select.innerHTML = '<option value="">-- เลือกสัปดาห์ --</option>' +
+                allWeeks.map(w => `<option value="${w.SHEET_NAME}">${w.SHEET_NAME}</option>`).join('');
+
+            if (currentSelection) select.value = currentSelection;
+        }
+
+        function populateRewardDropdown() {
+            const select = document.getElementById('calcRewardPeriod');
+            if (!select) return;
+            const currentSelection = select.value;
+            
+            // ใช้ข้อมูลจาก REWARD_MASTER ที่ดึงจาก Backend
+            let optionsHtml = '<option value="">-- เลือกงวดรางวัล --</option>';
+            
+            if (rewardList.length === 0) {
+                optionsHtml += '<option value="" disabled>🚫 ไม่พบข้อมูลใน REWARD_MASTER</option>';
+            } else {
+                rewardList.forEach(r => {
+                    const label = r.LABEL || 'ไม่ได้ระบุชื่อ';
+                    const start = r.START_DATE || '';
+                    const end = r.END_DATE || '';
+                    optionsHtml += `<option value="${start}|${end}|${label}">${label}</option>`;
+                });
+            }
+            
+            select.innerHTML = optionsHtml;
+            if (currentSelection) select.value = currentSelection;
+        }
+
+        async function triggerCalculation() {
+            const sheetName = document.getElementById('calcSheetName').value.trim();
+            if (!sheetName) {
+                showToast('error', 'แจ้งเตือน', 'กรุณาเลือกสัปดาห์ที่ต้องการคำนวณ');
+                return;
+            }
+
+            try {
+                // Show loading dynamically
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                loadingOverlay.style.display = 'flex';
+                loadingOverlay.querySelector('div').textContent = 'กำลังคำนวณสรุปเวลา...';
+
+                const payload = { action: 'summary', sheet: sheetName };
+
+                const response = await fetch(CONFIG.WEB_APP_URL, {
+                    method: 'POST',
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (result.status == 'success') {
+                    showToast('success', 'สำเร็จ', result.message || 'คำนวณเวลาสำเร็จ');
+                    document.getElementById('calcSheetName').value = '';
+                    fetchData(); // Refresh UI
+                } else {
+                    throw new Error(result.message || 'ไม่สามารถคำนวณได้');
+                }
+            } catch (e) {
+                showToast('error', 'ข้อผิดพลาด', e.message);
+            } finally {
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                loadingOverlay.style.display = 'none';
+                loadingOverlay.querySelector('div').textContent = 'กำลังซิงค์ฐานข้อมูล...'; // Reset text
+            }
+        }
+
+        async function triggerRewardCalculation() {
+            const val = document.getElementById('calcRewardPeriod').value;
+            if (!val) { 
+                showToast('error', 'แจ้งเตือน', 'กรุณาเลือกรอบรางวัล 1-10 ที่ต้องการ'); 
+                return; 
+            }
+            
+            const [start, end, label] = val.split('|');
+            try {
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                loadingOverlay.style.display = 'flex';
+                loadingOverlay.querySelector('div').textContent = 'กำลังคำนวณและอัปเดต Wall of Fame...';
+
+                const payload = { action: 'summary_reward', periodLabel: label, startDate: start, endDate: end };
+
+                const response = await fetch(CONFIG.WEB_APP_URL, {
+                    method: 'POST',
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+
+                if (result.status == 'success') {
+                    showToast('success', 'ปรับปรุงข้อมูลสำเร็จ', result.message);
+                } else {
+                    throw new Error(result.message || 'ไม่สามารถคำนวณ Wall of Fame ได้');
+                }
+            } catch (e) {
+                showToast('error', 'ข้อผิดพลาด', e.message);
+            } finally {
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                loadingOverlay.style.display = 'none';
+                loadingOverlay.querySelector('div').textContent = 'กำลังซิงค์ฐานข้อมูล...'; 
+            }
+        }
+
+        function populateRankDropdown() {
+            const select = document.getElementById('editRank');
+            select.innerHTML = '<option value="">-- เลือกยศ --</option>' + rankList.map(r => {
+                const rankName = r.RANK_NAME || r['RANK_NAME'];
+                return `<option value="${rankName}">${rankName}</option>`;
+            }).join('');
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('directoryTbody');
+            const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+
+            const filtered = policeUsers.filter(u => {
+                const searchStr = `${u.POLICE_CODE || u['ID']} ${(u.POLICE_NAME || u.NAME)} ${(u.POLICE_EMAIL || u['E-MAIL'])}`.toLowerCase();
+                return searchStr.includes(searchQuery);
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted fw-bold">ไม่พบข้อมูลที่ค้นหา</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(u => {
+                const code = u.POLICE_CODE || u['ID'] || u['CODE'] || '-';
+                const name = u.POLICE_NAME || u.NAME || '-';
+                const email = u.POLICE_EMAIL || u['E-MAIL'] || '-';
+                const rank = u.ROLE || u.RANK || '-';
+                const status = u.STATUS || u.ACTIVE || 'N';
+
+                const statusHtml = status === 'Y'
+                    ? `<span class="status-badge status-y"><i class="fa-solid fa-circle-check me-1"></i> Active</span>`
+                    : `<span class="status-badge status-n"><i class="fa-solid fa-lock me-1"></i> Inactive</span>`;
+
+                const picUrl = u.PIC_URL || '';
+                const avatarThumb = picUrl 
+                    ? `<img src="${picUrl}" class="avatar-circle shadow-sm" style="object-fit: cover;" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random'">`
+                    : `<div class="avatar-circle shadow-sm">${name.charAt(0)}</div>`;
+
+                return `
+                    <tr>
+                        <td class="font-monospace fw-bold text-primary">#${code}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                ${avatarThumb}
+                                <div><div class="fw-bold fs-6">${name}</div></div>
+                            </div>
+                        </td>
+                        <td><div class="text-muted opacity-75"><i class="fa-solid fa-envelope me-2"></i>${email}</div></td>
+                        <td><div class="fw-bold text-dark px-2 py-1 bg-light rounded d-inline-block border">${rank}</div></td>
+                        <td>${statusHtml}</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-light shadow-sm fw-bold border" onclick="openEditor('${code}')">
+                                <i class="fa-solid fa-pen text-primary me-1"></i> แก้ไข
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterTable() {
+            renderTable();
+        }
+
+        function openEditor(code) {
+            const user = policeUsers.find(u => (u.POLICE_CODE || u['ID'] || u['CODE']) == code);
+            if (!user) return;
+
+            document.getElementById('modalAvatar').textContent = (user.POLICE_NAME || user.NAME || 'P').charAt(0);
+            document.getElementById('modalCodeDisplay').textContent = `#${code}`;
+            document.getElementById('editCode').value = code;
+            document.getElementById('editName').value = user.POLICE_NAME || user.NAME || '';
+            document.getElementById('editEmail').value = user.POLICE_EMAIL || user['E-MAIL'] || '';
+            document.getElementById('editRank').value = user.ROLE || user.RANK || '';
+            document.getElementById('editStatus').value = user.STATUS || user.ACTIVE || 'N';
+            
+            const pic = user.PIC_URL || '';
+            document.getElementById('editPicUrl').value = pic;
+            document.getElementById('modalImgPreview').src = pic || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.POLICE_NAME || user.NAME || 'P')}&background=random`;
+
+            editorModalInstance.show();
+        }
+
+        async function saveChanges(e) {
+            e.preventDefault();
+
+            const btnSave = document.getElementById('btnSave');
+            btnSave.disabled = true;
+            btnSave.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin me-2"></i> กำลังบันทึก...';
+
+            const payload = {
+                action: 'updateUser',
+                POLICE_CODE: document.getElementById('editCode').value,
+                NAME: document.getElementById('editName').value,
+                EMAIL: document.getElementById('editEmail').value,
+                RANK: document.getElementById('editRank').value,
+                STATUS: document.getElementById('editStatus').value,
+                PIC_URL: document.getElementById('editPicUrl').value
+            };
+
+            try {
+                const response = await fetch(CONFIG.WEB_APP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    showToast('success', 'บันทึกสำเร็จ', 'อัปเดตข้อมูลกำลังพลเรียบร้อยแล้ว');
+                    editorModalInstance.hide();
+
+                    // ดึงข้อมูลใหม่เพื่อสะท้อนการเปลี่ยนแปลง
+                    await fetchData(true);
+                } else {
+                    showToast('error', 'บันทึกไม่สำเร็จ', result.message || 'เกิดข้อผิดพลาดไม่ทราบสาเหตุ');
+                }
+            } catch (err) {
+                console.error("Save Error:", err);
+                showToast('error', 'ระบบล่ม', 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ กรุณาลองใหม่');
+            } finally {
+                btnSave.disabled = false;
+                btnSave.innerHTML = '<i class="fa-solid fa-floppy-disk me-2"></i> บันทึกการอัปเดต';
+            }
+        }
+
+        function showToast(type, title, msg) {
+            const container = document.getElementById('toastContainer');
+            const el = document.createElement('div');
+            const color = type === 'success' ? '#166534' : '#991b1b';
+            const bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
+
+            el.className = 'toast show border-0 shadow-lg mb-3 rounded-3 overflow-hidden';
+            el.innerHTML = `
+                <div class="d-flex border-start border-5" style="border-color: ${color} !important;">
+                    <div class="p-3 text-white d-flex align-items-center justify-content-center" style="background-color: ${color}; width: 60px;">
+                        <i class="fa-solid ${type === 'success' ? 'fa-check' : 'fa-xmark'} fs-4"></i>
+                    </div>
+                    <div class="p-3 bg-white flex-grow-1">
+                        <strong class="d-block mb-1 text-dark">${title}</strong>
+                        <div class="small text-muted">${msg}</div>
+                    </div>
+                    <button type="button" class="btn-close m-2 shadow-none" onclick="this.closest('.toast').remove()"></button>
+                </div>
+            `;
+            container.appendChild(el);
+            setTimeout(() => el.remove(), 4000);
+        }
+    </script>
+</body>
+
+</html>

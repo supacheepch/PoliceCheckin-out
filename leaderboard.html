@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wall of Fame | Police Time Checkout</title>
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --police-blue: #1a237e;
+            --police-light: #e8eaf6;
+            --accent-gold: #ffd700;
+            --accent-silver: #c0c0c0;
+            --accent-bronze: #cd7f32;
+            --bg-soft: #f0f2f5;
+            --card-radius: 24px;
+            --deep-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: var(--bg-soft);
+            color: #2c3e50;
+            min-height: 100vh;
+        }
+
+        .font-inter {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .p-card {
+            background: #ffffff;
+            border-radius: var(--card-radius);
+            border: none;
+            box-shadow: var(--deep-shadow);
+        }
+
+        .dashboard-header {
+            background: #ffffff;
+            border-radius: var(--card-radius);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--deep-shadow);
+            border-left: 8px solid var(--accent-gold);
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-box {
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 215, 0, 0.15);
+            border-radius: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #d4af37;
+            font-size: 2rem;
+            margin-right: 1.5rem;
+        }
+
+        /* ══ TOP 3 PODIUM ══ */
+        .podium-container {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+            margin-bottom: 40px;
+        }
+
+        .podium-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative;
+        }
+
+        .podium-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            background: #e9ecef;
+            z-index: 2;
+        }
+
+        .rank-1 .podium-avatar {
+            width: 130px;
+            height: 130px;
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.4);
+        }
+
+        .rank-2 .podium-avatar {
+            border-color: var(--accent-silver);
+        }
+
+        .rank-3 .podium-avatar {
+            border-color: var(--accent-bronze);
+        }
+
+        .rank-badge {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: white;
+            position: absolute;
+            bottom: -10px;
+            z-index: 3;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .rank-1 {
+            order: 2;
+            z-index: 5;
+            margin-bottom: 20px;
+        }
+
+        .rank-2 {
+            order: 1;
+            z-index: 4;
+        }
+
+        .rank-3 {
+            order: 3;
+            z-index: 3;
+        }
+
+        .rank-1 .rank-badge {
+            background: linear-gradient(135deg, #FFD700, #FDB931);
+            width: 45px;
+            height: 45px;
+            font-size: 1.2rem;
+            bottom: -15px;
+        }
+
+        .rank-2 .rank-badge {
+            background: linear-gradient(135deg, #E0E0E0, #9E9E9E);
+        }
+
+        .rank-3 .rank-badge {
+            background: linear-gradient(135deg, #CD7F32, #A0522D);
+        }
+
+        .crown {
+            position: absolute;
+            top: -35px;
+            color: var(--accent-gold);
+            font-size: 2rem;
+            filter: drop-shadow(0 2px 5px rgba(255, 215, 0, 0.5));
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        /* ══ LIST RANKING ══ */
+        .rank-list-item {
+            background: white;
+            border-radius: 16px;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+            transition: transform 0.2s;
+        }
+
+        .rank-list-item:hover {
+            transform: scale(1.01);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
+        }
+
+        .list-rank-num {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #95a5a6;
+            width: 40px;
+        }
+
+        .list-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 15px;
+            background: #e9ecef;
+            object-fit: cover;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container py-4">
+
+        <!-- Header -->
+        <div class="dashboard-header flex-column flex-md-row text-center text-md-start">
+            <div class="logo-box mx-auto mx-md-0 mb-3 mb-md-0">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+            <div class="flex-grow-1">
+                <h1 class="h3 fw-800 mb-0">Wall of Fame <span class="text-warning">★</span></h1>
+                <p class="mb-0 text-muted">อันดับสุดยอดผู้พิทักษ์สันติราษฎร์ ประจำงวดรางวัล</p>
+            </div>
+
+            <!-- Period Selector -->
+            <div class="mt-3 mt-md-0 me-md-3" style="min-width: 200px;">
+                <select id="periodSelect" class="form-select border-0 shadow-sm rounded-pill px-4 fw-bold"
+                    onchange="renderLeaderboard()">
+                    <option value="">-- เลือกงวดรางวัล --</option>
+                </select>
+            </div>
+
+            <!-- Navigation Back -->
+            <!-- <div class="mt-3 mt-md-0">
+                <a href="main.html" class="btn btn-light rounded-pill px-4 fw-bold shadow-sm">
+                    <i class="fa-solid fa-arrow-left me-2"></i> กลับหน้าหลัก
+                </a>
+            </div> -->
+        </div>
+
+        <!-- Podium Section -->
+        <div id="podium-area" class="card p-card mb-4 d-none"
+            style="background: linear-gradient(to bottom, #ffffff, #f8f9fc);">
+            <div class="card-body p-4 p-md-5">
+                <div class="text-center mb-4">
+                    <h4 class="fw-800 text-uppercase" style="color: var(--police-blue); letter-spacing: 1px;">Top 3
+                        Officers of the Period</h4>
+                </div>
+                <div class="podium-container" id="podiumRow">
+                    <!-- Dynamic Podium -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="p-card p-5 text-center mb-4">
+            <i class="fa-solid fa-medal fa-4x text-light mb-3"></i>
+            <h4 class="fw-bold text-muted">กรุณาเลือกงวดรางวัลเพื่อแสดงผลงาน</h4>
+        </div>
+
+        <!-- Remaining Ranking List -->
+        <div id="list-area" class="card p-card d-none">
+            <div class="card-body p-4">
+                <h5 class="fw-800 mb-4"><i class="fa-solid fa-ranking-star me-2 text-primary"></i>
+                    อันดับผู้ปฏิบัติหน้าที่ยอดเยี่ยมท่านอื่นๆ</h5>
+                <div id="rankingList">
+                    <!-- Dynamic List -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script -->
+    <script>
+        const CONFIG = {
+            WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbzbX9M52hcMTnyFZMZdV86ZuB9qF_uBifuA7vlFSu9J0WwKRPJ-jI39hssIAhavDjb3/exec'
+        };
+
+        let wallOfFameData = [];
+        let rewardMaster = [];
+        let policeUsers = [];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await fetchData();
+        });
+
+        async function fetchData() {
+            try {
+                const response = await fetch(CONFIG.WEB_APP_URL + "?load=leaderboard");
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    wallOfFameData = result.data.wall_of_fame || [];
+                    rewardMaster = result.data.reward_master || [];
+                    policeUsers = result.data.police_users || [];
+
+                    populatePeriods();
+                }
+            } catch (e) {
+                console.error("Fetch Error:", e);
+            }
+        }
+
+        function populatePeriods() {
+            const select = document.getElementById('periodSelect');
+
+            // ใช้ REWARD_MASTER เป็น Source of Truth สำหรับ Dropdown
+            // เรียงล่าสุดก่อน (reverse เพราะ Google Sheet เรียง ascending)
+            const masterPeriods = [...rewardMaster].reverse();
+
+            let optionsHtml = '<option value="">-- เลือกงวดรางวัล --</option>';
+
+            if (masterPeriods.length > 0) {
+                // โชว์ทุกงวดใน REWARD_MASTER (ไม่ว่าจะมีข้อมูลใน WALL_OF_FAME หรือไม่)
+                masterPeriods.forEach(m => {
+                    const label = m.LABEL || '';
+                    const hasData = wallOfFameData.some(d => d.PERIOD === label);
+                    // ถ้ายังไม่มีข้อมูลให้แสดง icon บอก
+                    optionsHtml += `<option value="${label}">${label}${hasData ? '' : ' (ยังไม่มีข้อมูล)'}</option>`;
+                });
+            } else {
+                // Fallback: ดึงจากข้อมูลที่มีใน WALL_OF_FAME แทน
+                const existingPeriods = [...new Set(wallOfFameData.map(d => d.PERIOD))];
+                existingPeriods.forEach(p => {
+                    optionsHtml += `<option value="${p}">${p}</option>`;
+                });
+            }
+
+            select.innerHTML = optionsHtml;
+
+            // Auto-select งวดล่าสุดที่มีข้อมูลจริงก่อน ถ้าไม่มีก็เลือกตัวแรก
+            const firstWithData = masterPeriods.find(m => wallOfFameData.some(d => d.PERIOD === m.LABEL));
+            if (firstWithData) {
+                select.value = firstWithData.LABEL;
+            } else if (masterPeriods.length > 0) {
+                select.value = masterPeriods[0].LABEL;
+            }
+
+            renderLeaderboard();
+        }
+
+        function getPoliceInfo(code) {
+            const u = policeUsers.find(user => (user.POLICE_CODE || user.ID) == code);
+            return u || { RANK: 'เจ้าหน้าที่', PIC_URL: '' };
+        }
+
+        function renderLeaderboard() {
+            const period = document.getElementById('periodSelect').value;
+            const podiumArea = document.getElementById('podium-area');
+            const listArea = document.getElementById('list-area');
+            const emptyState = document.getElementById('empty-state');
+            const podiumRow = document.getElementById('podiumRow');
+            const rankingList = document.getElementById('rankingList');
+
+            if (!period) {
+                podiumArea.classList.add('d-none');
+                listArea.classList.add('d-none');
+                emptyState.classList.remove('d-none');
+                return;
+            }
+
+            const filtered = wallOfFameData.filter(d => d.PERIOD === period)
+                .sort((a, b) => parseInt(a.RANK) - parseInt(b.RANK));
+
+            if (filtered.length === 0) {
+                podiumArea.classList.add('d-none');
+                listArea.classList.add('d-none');
+                emptyState.classList.remove('d-none');
+                emptyState.innerHTML = `<i class="fa-solid fa-circle-exclamation fa-3x text-warning mb-3"></i><h4 class="fw-bold">ไม่พบข้อมูลสรุปในงวดนี้</h4>`;
+                return;
+            }
+
+            emptyState.classList.add('d-none');
+            podiumArea.classList.remove('d-none');
+
+            // Render Podium (Top 3)
+            const top3 = filtered.slice(0, 3);
+            const podiumPositions = [
+                { rank: 2, data: top3.find(d => d.RANK == "2") },
+                { rank: 1, data: top3.find(d => d.RANK == "1") },
+                { rank: 3, data: top3.find(d => d.RANK == "3") }
+            ];
+
+            podiumRow.innerHTML = podiumPositions.map(pos => {
+                if (!pos.data) return `<div class="podium-item rank-${pos.rank}" style="opacity:0; visibility:hidden;"></div>`;
+
+                const info = getPoliceInfo(pos.data.POLICE_CODE);
+                const avatar = info.PIC_URL || `https://ui-avatars.com/api/?name=${encodeURIComponent(pos.data.NAME)}&background=random`;
+
+                return `
+                    <div class="podium-item rank-${pos.rank}">
+                        <div class="position-relative mb-4">
+                            ${pos.rank == 1 ? '<i class="fa-solid fa-crown crown"></i>' : ''}
+                            <img src="${avatar}" class="podium-avatar" alt="Officer">
+                            <div class="rank-badge">${pos.rank}</div>
+                        </div>
+                        <h5 class="${pos.rank == 1 ? 'fw-800' : 'fw-700'} mb-0">${pos.data.NAME}</h5>
+                        <p class="text-muted small mb-1">${info.RANK || '-'}</p>
+                        <span class="badge ${pos.rank == 1 ? 'bg-warning text-dark' : 'bg-light text-dark'} shadow-sm px-3 py-2 font-inter fw-bold">
+                            ${pos.data.HOURS_SERVED} hrs
+                        </span>
+                    </div>
+                `;
+            }).join('');
+
+            // Render List (Rank 4 ขึ้นไป) - กรองด้วย RANK จริง ไม่ใช่แค่ slice
+            const remain = filtered.filter(d => parseInt(d.RANK) > 3);
+            if (remain.length > 0) {
+                listArea.classList.remove('d-none');
+                rankingList.innerHTML = remain.map(d => {
+                    const info = getPoliceInfo(d.POLICE_CODE);
+                    const avatar = info.PIC_URL || `https://ui-avatars.com/api/?name=${encodeURIComponent(d.NAME)}&background=random`;
+
+                    return `
+                        <div class="rank-list-item">
+                            <div class="list-rank-num">${d.RANK}</div>
+                            <img src="${avatar}" class="list-avatar" alt="User" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(d.NAME)}&background=random'">
+                            <div class="flex-grow-1">
+                                <h6 class="fw-700 mb-0">${d.NAME}</h6>
+                                <span class="text-muted small">${info.RANK || '-'}</span>
+                            </div>
+                            <div class="font-inter fw-bold fs-5 text-primary">${d.HOURS_SERVED} <span class="fs-6 text-muted">hrs</span></div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                listArea.classList.add('d-none');
+            }
+        }
+    </script>
+</body>
+
+</html>

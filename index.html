@@ -1,169 +1,201 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ระบบลงเวลาเข้า-ออกเวร | ตำรวจ</title>
-  <meta name="description" content="ระบบบันทึกเวลาเข้า-ออกเวรตำรวจ เชื่อมต่อ Google Sheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Testing Portal | Police Time</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <!-- Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f0f2f5;
+            color: #2c3e50;
+        }
 
-  <!-- Main CSS -->
-  <link rel="stylesheet" href="css/style.css">
+        .navbar-custom {
+            background: linear-gradient(135deg, #1a237e, #0d1642);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .card-menu {
+            border-radius: 16px;
+            border: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            height: 100%;
+            background: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+
+        .card-menu:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .icon-box {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+        }
+
+        .cat-title {
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            margin-top: 40px;
+            color: #1a237e;
+            font-weight: 800;
+        }
+    </style>
 </head>
 
 <body>
 
-  <!-- ── Toast Notifications ── -->
-  <div class="toast-container" id="toastContainer"></div>
+    <!-- 
+    ==============================================================================
+    ⚠️ คำแนะนำเมื่อนำระบบไปขึ้น Google Sites (Production) ⚠️
+    ==============================================================================
+    1. หน้านี้ (index.html) มีไว้สำหรับ "ทดสอบใน Local (คอมของคุณ)" เพื่อให้มีเมนูคลิกไปมาง่ายๆ
+    2. เมื่อคุณไปทำใน Google Sites ✨คุณไม่จำเป็นต้องใช้หน้านี้✨ 
+    3. เพราะ Google Sites มีระบบ "แถบนำทาง (Navigation / Sidebar)" ของตัวเองอยู่แล้ว 
+    4. สิ่งที่คุณต้องทำใน Google Sites คือ:
+       - สร้างหน้าเว็บใหม่ใน Google Sites (เช่น ตั้งชื่อหน้าว่า "ลงเวลาเข้าเวร")
+       - กดฝังโค้ด (Embed Code) แล้วเอาโค้ดของ main.html ไปแปะ
+       - ทำแบบนี้กับทุกไฟล์แยกหน้ากันไป แล้วใช้เมนูของ Google Sites ในการลิงก์ไปมา
+    ==============================================================================
+    -->
 
-  <!-- ── Main Wrapper ── -->
-  <div class="page-wrapper">
+    <!-- Top Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom py-3">
+        <div class="container">
+            <a class="navbar-brand fw-bold d-flex align-items-center" href="#">
+                <i class="fa-solid fa-shield-halved me-2 text-warning fs-4"></i>
+                Police Time Checkout
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto fw-bold">
+                    <li class="nav-item"><a class="nav-link active" href="index.html">🏠 เมนูหลัก (Local)</a></li>
+                    <li class="nav-item"><a class="nav-link" href="main.html">ลงเวลา</a></li>
+                    <li class="nav-item"><a class="nav-link" href="manager.html">ผู้ดูแล</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
 
-    <!-- ══ HEADER ══════════════════════════════════ -->
-    <header class="site-header">
-      <div class="header-emblem">👮</div>
-      <div class="header-text">
-        <h1>ระบบลงเวลาเข้า-ออกเวร</h1>
-        <p id="stationName">สถานีตำรวจ &nbsp;|&nbsp; Police Time Checkout System</p>
-      </div>
-      <div class="header-clock">
-        <div class="clock-time" id="clockTime">00:00:00</div>
-        <div class="clock-date" id="clockDate">--</div>
-      </div>
-    </header>
+    <!-- Main Menu Content -->
+    <div class="container py-4 mb-5">
+        
+        <div class="text-center mb-5 mt-3">
+            <h1 class="fw-800">ศูนย์กลางระบบ (Local Testing)</h1>
+            <p class="text-muted">คลิกที่เมนูด้านล่างเพื่อกระโดดไปยังหน้าต่างๆ ที่เขียนไว้</p>
+        </div>
 
-    <!-- ══ STATS ════════════════════════════════════ -->
-    <div class="stats-grid">
-      <div class="stat-item total">
-        <div class="stat-value" id="statTotal">0</div>
-        <div class="stat-label">ตำรวจทั้งหมด</div>
-      </div>
-      <div class="stat-item active">
-        <div class="stat-value" id="statActive">0</div>
-        <div class="stat-label">กำลังปฏิบัติงาน</div>
-      </div>
-      <div class="stat-item off">
-        <div class="stat-value" id="statOff">0</div>
-        <div class="stat-label">เช็คเอาต์แล้ว</div>
-      </div>
+        <!-- หมวดหมู่ที่ 1: ผู้ใช้งานทั่วไป (เจ้าหน้าที่) -->
+        <h4 class="cat-title"><i class="fa-solid fa-user-police me-2"></i> 1. เมนูสำหรับเจ้าหน้าที่ตำรวจ (User Area)</h4>
+        <div class="row g-4">
+            
+            <div class="col-md-4 col-sm-6">
+                <a href="Register.html" class="card-menu p-4">
+                    <div class="icon-box bg-primary bg-opacity-10 text-primary">
+                        <i class="fa-solid fa-user-plus"></i>
+                    </div>
+                    <h5 class="fw-bold">ลงทะเบียน (Register)</h5>
+                    <p class="text-muted small mb-0">สมัครใช้งานระบบเบื้องต้น</p>
+                </a>
+            </div>
+
+            <div class="col-md-4 col-sm-6">
+                <a href="main.html" class="card-menu p-4">
+                    <div class="icon-box bg-success bg-opacity-10 text-success">
+                        <i class="fa-solid fa-fingerprint"></i>
+                    </div>
+                    <h5 class="fw-bold">ลงเวลาเข้า-ออก (Main)</h5>
+                    <p class="text-muted small mb-0">ระบบเช็คอิน เข้า-ออกเวรปฏิบัติการ</p>
+                </a>
+            </div>
+
+            <div class="col-md-4 col-sm-6">
+                <a href="profile.html" class="card-menu p-4">
+                    <div class="icon-box bg-info bg-opacity-10 text-info">
+                        <i class="fa-solid fa-id-card"></i>
+                    </div>
+                    <h5 class="fw-bold">โพรไฟล์ (Profile)</h5>
+                    <p class="text-muted small mb-0">อัพโหลดรูปภาพประจำตัว อัพเดตข้อมูล</p>
+                </a>
+            </div>
+
+        </div>
+
+        <!-- หมวดหมู่ที่ 2: งานส่วนรวม (Community / Station) -->
+        <h4 class="cat-title"><i class="fa-solid fa-users-viewfinder me-2"></i> 2. กระดานสถิติและเหตุการณ์ (Station Boards)</h4>
+        <div class="row g-4">
+            
+            <div class="col-md-4 col-sm-6">
+                <a href="dashboard.html" class="card-menu p-4">
+                    <div class="icon-box bg-secondary bg-opacity-10 text-secondary">
+                        <i class="fa-solid fa-display"></i>
+                    </div>
+                    <h5 class="fw-bold">สถานะตู้แดง (Dashboard)</h5>
+                    <p class="text-muted small mb-0">ดูภาพรวมว่าตอนนี้ใครเข้าเวรอยู่บ้าง</p>
+                </a>
+            </div>
+
+            <div class="col-md-4 col-sm-6">
+                <a href="leaderboard.html" class="card-menu p-4 border-bottom border-warning border-4">
+                    <div class="icon-box bg-warning bg-opacity-10 text-warning">
+                        <i class="fa-solid fa-trophy"></i>
+                    </div>
+                    <h5 class="fw-bold">สุดยอดผู้พิทักษ์ (Wall of Fame)</h5>
+                    <p class="text-muted small mb-0">จัดอันดับตำรวจเข้าเวรโดดเด่นประจำเดือน</p>
+                </a>
+            </div>
+
+            <div class="col-md-4 col-sm-6">
+                <a href="events.html" class="card-menu p-4">
+                    <div class="icon-box bg-danger bg-opacity-10 text-danger">
+                        <i class="fa-solid fa-clipboard-list"></i>
+                    </div>
+                    <h5 class="fw-bold">กระดานภารกิจ (Events)</h5>
+                    <p class="text-muted small mb-0">ปฏิทินแจ้งแผนงาน ตั้งด่าน และเหตุการณ์</p>
+                </a>
+            </div>
+
+        </div>
+
+        <!-- หมวดหมู่ที่ 3: ผู้ดูแลระบบ (Admin) -->
+        <h4 class="cat-title"><i class="fa-solid fa-user-shield me-2"></i> 3. สำหรับผู้บังคับบัญชา (Admin Area)</h4>
+        <div class="row g-4">
+            
+            <div class="col-md-4 col-sm-6">
+                <a href="manager.html" class="card-menu p-4 border-top border-dark border-4">
+                    <div class="icon-box bg-dark bg-opacity-10 text-dark">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                    <h5 class="fw-bold">ระบบจัดการ (Manager)</h5>
+                    <p class="text-muted small mb-0">อนุมัติผู้ใช้ สรุปรายการลงเวร สั่งคำนวณ</p>
+                </a>
+            </div>
+
+        </div>
+
     </div>
 
-    <!-- ══ MAIN GRID ════════════════════════════════ -->
-    <div class="main-grid">
-
-      <!-- ── Check-in/out Panel ── -->
-      <div class="card">
-        <div class="card-title">
-          <div class="icon">🕐</div>
-          บันทึกเวลาเข้า-ออกเวร
-        </div>
-
-        <!-- Select Officer -->
-        <div class="form-group">
-          <label for="officerSelect">เลือกชื่อตำรวจ</label>
-          <select id="officerSelect" onchange="onSelectChange()">
-            <option value="">-- กำลังโหลดรายชื่อ... --</option>
-          </select>
-        </div>
-
-        <!-- Officer Info Badge (แสดงหลังเลือก) -->
-        <div class="officer-info" id="officerInfo">
-          <div class="officer-name" id="infoName">--</div>
-          <div class="officer-rank" id="infoRank">--</div>
-        </div>
-
-        <!-- Buttons -->
-        <div class="btn-group">
-          <button id="btnCheckIn"
-                  class="btn btn-checkin"
-                  onclick="recordAction('in')">
-            ✅ เช็คอิน
-          </button>
-          <button id="btnCheckOut"
-                  class="btn btn-checkout"
-                  onclick="recordAction('out')">
-            🚪 เช็คเอาต์
-          </button>
-        </div>
-
-        <!-- Config Hint -->
-        <div class="config-panel" style="margin-top:16px;">
-          <strong>⚙️ ตั้งค่า Google Sheet</strong><br>
-          แก้ไข <code>js/config.js</code> → ใส่ <code>SHEET_ID</code> ของคุณ<br>
-          แล้ว Publish Sheet เป็น CSV (File → Share → Publish to web)
-        </div>
-      </div>
-
-      <!-- ── Officer List Panel ── -->
-      <div class="card">
-        <div class="card-title">
-          <div class="icon">👥</div>
-          รายชื่อตำรวจ
-          <span class="source-badge" id="sourceBadge" style="margin-left:auto;">
-            <span>●</span> กำลังโหลด...
-          </span>
-          <button class="btn-reload" id="btnReload" onclick="loadOfficers()" title="รีโหลดข้อมูล">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="23 4 23 10 17 10"></polyline>
-              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-            </svg>
-          </button>
-        </div>
-
-        <!-- Officer Cards (คลิกเพื่อเลือก) -->
-        <div id="officerListWrapper">
-          <div style="text-align:center;padding:30px;color:var(--text-muted);">
-            <span class="spinner"></span> กำลังโหลด...
-          </div>
-        </div>
-      </div>
-
-      <!-- ── Log Table (Full Width) ── -->
-      <div class="card card-full">
-        <div class="table-header">
-          <div class="card-title" style="margin-bottom:0;padding-bottom:0;border-bottom:none;">
-            <div class="icon">📋</div>
-            ประวัติวันนี้
-          </div>
-        </div>
-
-        <div class="log-table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>สถานะ</th>
-                <th>ชื่อ-สกุล</th>
-                <th>สังกัด</th>
-                <th>เวลา</th>
-                <th>วันที่</th>
-              </tr>
-            </thead>
-            <tbody id="logTbody">
-              <tr class="loading-row">
-                <td colspan="5">
-                  <div class="empty-state">
-                    <div class="icon">📋</div>
-                    <p>ยังไม่มีการเช็คอิน/เช็คเอาต์วันนี้</p>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-    </div><!-- /main-grid -->
-
-  </div><!-- /page-wrapper -->
-
-  <!-- ── Scripts (โหลดตามลำดับ) ── -->
-  <script src="js/config.js"></script>
-  <script src="js/googlesheet.js"></script>
-  <script src="js/app.js"></script>
-
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.css"></script>
 </body>
 </html>

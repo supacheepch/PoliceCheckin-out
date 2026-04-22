@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สถานะการปฏิบัติงาน | Police Status Dashboard</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --police-blue: #1a237e;
+            --police-light: #e8eaf6;
+            --accent-gold: #ffd700;
+            --bg-soft: #f0f2f5;
+            --card-radius: 24px;
+            --deep-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+            --on-duty-color: #2e7d32;
+            --off-duty-color: #78909c;
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: var(--bg-soft);
+            color: #2c3e50;
+            min-height: 100vh;
+        }
+
+        /* ══ DASHBOARD COMPONENTS ══ */
+        .p-card {
+            background: #ffffff;
+            border-radius: var(--card-radius);
+            border: none;
+            box-shadow: var(--deep-shadow);
+            transition: all 0.3s ease;
+        }
+
+        .dashboard-header {
+            background: #ffffff;
+            border-radius: var(--card-radius);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--deep-shadow);
+            border-left: 8px solid var(--police-blue);
+        }
+
+        .clock-time {
+            font-family: 'Inter', sans-serif;
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: var(--police-blue);
+            letter-spacing: -1px;
+        }
+
+        /* ══ STATS ══ */
+        .stat-card {
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            line-height: 1;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* ══ OFFICER GRID ══ */
+        .officer-card {
+            height: 100%;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+            border-top: 4px solid transparent;
+        }
+
+        .officer-card.on-duty {
+            border-top-color: var(--on-duty-color);
+        }
+
+        .card-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 18px;
+            background: var(--police-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--police-blue);
+            margin-bottom: 1rem;
+        }
+
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .badge-on {
+            background: #e8f5e9;
+            color: var(--on-duty-color);
+        }
+
+        .badge-off {
+            background: #f1f5f9;
+            color: var(--off-duty-color);
+        }
+
+        /* ══ ANIMATIONS ══ */
+        .pulse-green {
+            width: 8px;
+            height: 8px;
+            background: var(--on-duty-color);
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse-dot 1.5s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(46, 125, 50, 0.7);
+            }
+
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 10px rgba(46, 125, 50, 0);
+            }
+
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(46, 125, 50, 0);
+            }
+        }
+
+        /* ══ SEARCH ══ */
+        .search-container {
+            max-width: 600px;
+            margin: -1rem auto 2rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .search-input {
+            border-radius: 20px;
+            padding: 1.2rem 1.5rem 1.2rem 3.5rem;
+            border: none;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--police-blue);
+            opacity: 0.5;
+        }
+
+        /* ══ REFRESH BAR ══ */
+        .sync-indicator {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        #loadingScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            pointer-events: all;
+            cursor: wait;
+        }
+
+        .spinner-premium {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--police-light);
+            border-top: 4px solid var(--police-blue);
+            border-radius: 50%;
+            animation: spin 1s infinite linear;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="loadingScreen">
+        <div class="spinner-premium"></div>
+        <div class="mt-3 font-inter small fw-bold text-muted">SYNCING DATA...</div>
+    </div>
+
+    <div class="container py-4">
+        <!-- Header -->
+
+        <div class="dashboard-header d-flex flex-column flex-md-row align-items-center justify-content-between">
+            <div class="d-flex align-items-center mb-4 mb-md-0">
+                <div class="p-card me-3 d-flex align-items-center justify-content-center"
+                    style="width: 70px; height: 70px; background: var(--police-blue); color: white;">
+                    <i class="fa-solid fa-building-shield fs-3"></i>
+                </div>
+                <div>
+                    <h1 class="h4 fw-800 mb-0">สรุปสถานะกำลังพล</h1>
+                    <p class="mb-0 text-muted small fw-600">
+                        <span id="lastUpdate">กำลังอัปเดต...</span>
+                        <span class="mx-2">•</span>
+                        <button class="btn btn-sm btn-outline-primary border-0 py-0 px-2 fw-bold"
+                            onclick="fetchData(true)">
+                            <i id="refreshIcon" class="fa-solid fa-arrows-rotate me-1"></i> รีเฟรชข้อมูล
+                        </button>
+                    </p>
+                </div>
+            </div>
+            <div class="text-center text-md-end">
+                <div class="clock-time mb-0" id="clockTime">00:00:00</div>
+                <div class="sync-indicator" id="clockDate">--</div>
+            </div>
+        </div>
+
+        <!-- Global Stats -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
+                <div class="p-card stat-card border-bottom border-4 border-primary">
+                    <div class="text-muted small fw-bold text-uppercase mb-2">เจ้าหน้าที่ทั้งหมด</div>
+                    <div class="stat-value text-primary" id="statTotal">0</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-card stat-card border-bottom border-4 border-success">
+                    <div class="text-muted small fw-bold text-uppercase mb-2">กำลังปฏิบัติหน้าที่</div>
+                    <div class="stat-value text-success" id="statOnDuty">0</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-card stat-card border-bottom border-4 border-secondary">
+                    <div class="text-muted small fw-bold text-uppercase mb-2">พักผ่อน / ออกเวร</div>
+                    <div class="stat-value text-secondary" id="statOffDuty">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="search-container">
+            <i class="fa-solid fa-magnifying-glass search-icon fs-5"></i>
+            <input type="text" id="searchInput" class="form-control search-input"
+                placeholder="ค้นหาชื่อ หรือ ยศ ของเจ้าหน้าที่..." onkeyup="filterOfficers()">
+        </div>
+
+        <!-- Grid -->
+        <div class="row g-4" id="officerGrid">
+            <!-- Cards generated here -->
+        </div>
+    </div>
+
+    <script>
+        const CONFIG = {
+            CSV_URL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTAmJRn6O3ghHHFAg04RKU3PNU4_-vMF1zA5UZ1sAAJDcMc9Js8t-lLxhkKwkLYKvqK2_8yFHQnG-Lk/pub?output=csv',
+            WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbzbX9M52hcMTnyFZMZdV86ZuB9qF_uBifuA7vlFSu9J0WwKRPJ-jI39hssIAhavDjb3/exec',
+            REFRESH_INTERVAL: 60000 // 1 Minute
+        };
+
+        /* ══ UI UTILS ══ */
+        const UI = {
+            toast(type, title, msg) {
+                const color = type == 'success' ? '#2e7d32' : '#c62828';
+                const container = document.getElementById('toastContainer');
+                if (!container) return;
+                const el = document.createElement('div');
+                el.className = `toast show p-card border-0 mb-3 overflow-hidden shadow-lg`;
+                el.style.maxWidth = '320px';
+                el.innerHTML = `
+                    <div class="d-flex border-start border-4" style="border-color: ${color} !important;">
+                        <div class="p-3 text-white d-flex align-items-center justify-content-center" style="background: ${color}; width: 60px;">
+                            <i class="fa-solid ${type == 'success' ? 'fa-check' : 'fa-triangle-exclamation'} fa-lg"></i>
+                        </div>
+                        <div class="p-3 bg-white flex-grow-1">
+                            <strong class="d-block mb-1" style="color: ${color}">${title}</strong>
+                            <div class="small text-muted">${msg}</div>
+                        </div>
+                        <button type="button" class="btn-close m-2 shadow-none" data-bs-dismiss="toast" onclick="this.closest('.toast').remove()"></button>
+                    </div>`;
+                container.appendChild(el);
+                setTimeout(() => el.remove(), 4500);
+            },
+            showLoading() {
+                const el = document.getElementById('loadingScreen');
+                el.style.display = 'flex';
+                document.body.setAttribute('inert-loading', 'true');
+            },
+            hideLoading() {
+                const el = document.getElementById('loadingScreen');
+                el.style.display = 'none';
+                document.body.removeAttribute('inert-loading');
+            }
+        };
+
+        let allOfficers = [];
+        let allWeeks = [];
+
+        async function fetchData(isManual = false) {
+            const btnRefreshIcon = document.getElementById('refreshIcon');
+            const lastUpdateText = document.getElementById('lastUpdate');
+            const loadingEl = document.getElementById('loadingScreen');
+
+            try {
+                // ทุกกรณี ทั้ง manual และ first load ให้แสดง overlay เต็มจอเหมือนกัน
+                loadingEl.style.display = 'flex';
+                document.body.style.pointerEvents = 'none';
+                if (btnRefreshIcon) btnRefreshIcon.disabled = true;
+                if (lastUpdateText) lastUpdateText.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin me-1"></i> กำลังอัปเดต...';
+
+                const resp = await fetch(CONFIG.WEB_APP_URL + "?load=main");
+                if (!resp.ok) throw new Error('Network error');
+
+                const result = await resp.json();
+                if (result.status === 'success') {
+                    allOfficers = result.data.police_users || [];
+                    allWeeks = (result.data.week_master || []).reverse();
+                } else {
+                    throw new Error(result.message || 'Cannot fetch dashboard data');
+                }
+
+                renderDashboard();
+                updateLastRefreshTime();
+            } catch (e) {
+                console.error("Fetch Error:", e);
+                UI.toast('error', 'ข้อผิดพลาด', 'ดึงข้อมูลไม่สำเร็จ');
+            } finally {
+                loadingEl.style.display = 'none';
+                document.body.style.pointerEvents = '';
+                if (btnRefreshIcon) btnRefreshIcon.disabled = false;
+            }
+        }
+
+        function populateWeekDropdown() {
+            // ตอนนี้ฝังเครื่องมือคำนวณไปอยู่ที่ addRankPolice.html แล้ว ฟังก์ชันนี้เป็น stub เพื่อไม่ให้เกิดข้อผิดพลาด
+            const select = document.getElementById('calcSheetName');
+            if (!select) return; // ไม่มี Element ใน Dashboard แล้ว ออกไเย็ 
+            const currentSelection = select.value;
+
+            select.innerHTML = '<option value="">-- เลือกสัปดาห์ --</option>' +
+                allWeeks.map(w => `<option value="${w.SHEET_NAME}">${w.SHEET_NAME}</option>`).join('');
+
+            if (currentSelection) select.value = currentSelection;
+        }
+
+        function renderDashboard() {
+            const grid = document.getElementById('officerGrid');
+            const search = document.getElementById('searchInput').value.toLowerCase();
+
+            // Filter
+            const filtered = allOfficers.filter(o => {
+                const text = ((o.POLICE_NAME || o.NAME || '') + ' ' + (o.ROLE || o.RANK || '')).toLowerCase();
+                return text.includes(search);
+            });
+
+            // Re-order: On Duty first
+            filtered.sort((a, b) => (b.ON_DULTY == 'Y' ? 1 : 0) - (a.ON_DULTY == 'Y' ? 1 : 0));
+
+            // Stats
+            document.getElementById('statTotal').textContent = allOfficers.length;
+            document.getElementById('statOnDuty').textContent = allOfficers.filter(o => o.ON_DULTY == 'Y').length;
+            document.getElementById('statOffDuty').textContent = allOfficers.filter(o => o.ON_DULTY != 'Y').length;
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div class="col-12 text-center py-5 text-muted fw-bold">ไม่พบรายชื่อที่ค้นหา</div>';
+                return;
+            }
+
+            grid.innerHTML = filtered.map(o => {
+                const isOn = o.ON_DULTY == 'Y';
+                return `
+                    <div class="col-sm-6 col-lg-4 col-xl-3 animate__animated animate__fadeIn">
+                        <div class="p-card officer-card ${isOn ? 'on-duty' : ''}">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="card-avatar">
+                                    <i class="fa-solid fa-user-shield"></i>
+                                </div>
+                                <div class="status-badge ${isOn ? 'badge-on' : 'badge-off'}">
+                                    ${isOn ? '<span class="pulse-green"></span> ปฏิบัติหน้าที่' : 'ออกเวร / พัก'}
+                                </div>
+                            </div>
+                            <h5 class="fw-800 mb-1">${o.POLICE_NAME || o.NAME || 'ไม่มีชื่อ'}</h5>
+                            <p class="text-muted small fw-600 mb-2">${o.ROLE || o.RANK || 'เจ้าหน้าที่'}</p>
+                            
+                            <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+                                <div class="text-primary fw-700" style="font-size: 0.75rem;">
+                                    <i class="fa-solid fa-clock-rotate-left me-1"></i> ${o.WORK_TIME || o.HOURS_SERVED || '00:00'} ชม.
+                                </div>
+                                <div class="text-uppercase text-muted fw-700" style="font-size: 0.65rem; letter-spacing: 0.5px;">
+                                    CODE: ${o.POLICE_CODE || 'N/A'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterOfficers() {
+            renderDashboard();
+        }
+
+        function updateLastRefreshTime() {
+            const now = new Date();
+            document.getElementById('lastUpdate').textContent = `อัปเดตล่าสุดเมื่อ ${now.toLocaleTimeString('th-TH')}`;
+        }
+
+        function startClock() {
+            const tick = () => {
+                const n = new Date();
+                document.getElementById('clockTime').textContent = n.toLocaleTimeString('th-TH', { hour12: false });
+                document.getElementById('clockDate').textContent = n.toLocaleDateString('th-TH', {
+                    year: 'numeric', month: 'long', day: 'numeric', weekday: 'long'
+                });
+            };
+            tick(); setInterval(tick, 1000);
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            startClock();
+            fetchData();
+        });
+    </script>
+
+    <!-- Animation Library -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+</body>
+
+</html>

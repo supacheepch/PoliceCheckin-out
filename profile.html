@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>โปรไฟล์ส่วนตัว | Police Time Checkout</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --police-blue: #1a237e;
+            --police-light: #e8eaf6;
+            --bg-soft: #f0f2f5;
+            --card-radius: 24px;
+            --deep-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+        }
+
+        body { font-family: 'Sarabun', sans-serif; background-color: var(--bg-soft); color: #2c3e50; }
+        .font-inter { font-family: 'Inter', sans-serif; }
+        .p-card { background: #ffffff; border-radius: var(--card-radius); border: none; box-shadow: var(--deep-shadow); }
+        .form-control-luxe { border-radius: 14px; padding: 0.8rem 1.2rem; border: 2px solid #edf2f7; background: #f8fafc; }
+
+        /* ══ PROFILE UPLOAD ══ */
+        .profile-header {
+            background: linear-gradient(135deg, var(--police-blue), #2c3e50);
+            border-radius: var(--card-radius) var(--card-radius) 0 0;
+            padding: 80px 20px 40px;
+            position: relative;
+            text-align: center;
+        }
+
+        .avatar-upload {
+            position: absolute;
+            bottom: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 140px;
+            height: 140px;
+            z-index: 10;
+        }
+
+        .avatar-preview {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 6px solid white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+            background: white url('https://i.pravatar.cc/150') center center / cover no-repeat;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .avatar-preview::after {
+            content: "\f030"; /* FontAwesome Camera */
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            position: absolute;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            width: 100%;
+            height: 40px;
+            bottom: 0;
+            left: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            cursor: pointer;
+        }
+
+        .avatar-preview:hover::after {
+            opacity: 1;
+        }
+
+        .avatar-input {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0; left: 0;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 20;
+        }
+
+        /* ══ STAT CHARTS ══ */
+        .stat-box {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid #edf2f7;
+            transition: transform 0.2s;
+        }
+
+        .stat-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+            background: white;
+            border-color: var(--police-light);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--police-blue);
+            line-height: 1;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container py-4" style="max-width: 800px;">
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-800 mb-0"><i class="fa-solid fa-user-gear text-primary me-2"></i> บัญชีผู้ใช้</h2>
+            <a href="main.html" class="btn btn-outline-secondary rounded-pill px-4 fw-bold">กลับหน้าหลัก</a>
+        </div>
+
+        <div class="card p-card mb-4" style="overflow: visible;">
+            <div class="profile-header">
+                <!-- Cover Area -->
+                <div class="avatar-upload">
+                    <div class="avatar-preview" id="imagePreview">
+                        <input type="file" class="avatar-input" accept="image/*" title="อัพโหลดรูปภาพประจำตัว สำหรับโชว์บน Wall of Fame">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-body pt-5 mt-4 text-center pb-5">
+                <h3 class="fw-800 mb-0">ร.ต.อ. สมชาย ใจดี</h3>
+                <p class="text-muted mb-2">รอง สวป. | รหัสประจำตัว: POL-001</p>
+                <span class="badge bg-success rounded-pill px-3 py-2 fw-bold"><i class="fa-solid fa-circle-check me-1"></i> ปกติ (Active)</span>
+
+                <div class="mt-4 p-3 bg-light rounded-4 d-inline-block text-start" style="border: 2px dashed #ccc;">
+                    <i class="fa-solid fa-circle-info text-primary me-2"></i> 
+                    <span class="small fw-500">อัพโหลดรูปภาพของท่าน เพื่อใช้แสดงผลบนหน้า <b>Wall of Fame</b> <br/> (รองรับ .jpg, .png ขนาดไม่เกิน 2MB)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- STATISTICS -->
+        <h5 class="fw-800 mb-3 ps-2"><i class="fa-solid fa-chart-pie me-2 text-primary"></i> สถิติการปฏิบัติงาน (เดือนนี้)</h5>
+        <div class="row g-3 mb-4">
+            <div class="col-4">
+                <div class="stat-box">
+                    <div class="stat-value font-inter">120</div>
+                    <div class="small fw-bold text-muted text-uppercase">ชั่วโมงเข้าเวร</div>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="stat-box">
+                    <div class="stat-value font-inter text-success">15</div>
+                    <div class="small fw-bold text-muted text-uppercase">จำนวนกะ (Shifts)</div>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="stat-box">
+                    <div class="stat-value font-inter text-warning">2</div>
+                    <div class="small fw-bold text-muted text-uppercase">รับแจ้งเหตุ</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FORM -->
+        <div class="card p-card">
+            <div class="card-body p-4">
+                <h5 class="fw-800 mb-3">แก้ไขข้อมูลติดต่อ</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">เบอร์โทรศัพท์มือถือ</label>
+                        <input type="tel" class="form-control form-control-luxe" value="081-234-5678">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">อีเมลติดต่อ</label>
+                        <input type="email" class="form-control form-control-luxe" value="somchai.police@gmail.com" readonly style="background-color: #e9ecef;">
+                    </div>
+                    <div class="col-12 mt-4 text-end">
+                        <button class="btn btn-primary rounded-pill px-5 fw-bold py-2 shadow-sm">บันทึกข้อมูล</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Simple script to preview selected image
+        document.querySelector('.avatar-input').addEventListener('change', function(e) {
+            if (e.target.files && e.target.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('imagePreview').style.backgroundImage = 'url(' + e.target.result + ')';
+                }
+                reader.readAsDataURL(e.target.files[0]);
+                alert('อัพโหลดรูปภาพสำเร็จ! (จำลองการทํางาน)');
+            }
+        });
+    </script>
+</body>
+</html>
