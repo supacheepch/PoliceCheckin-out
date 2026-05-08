@@ -299,7 +299,6 @@
 
                 if (result.status === 'success') {
                     wallOfFameData = result.data.wall_of_fame || [];
-                    rewardMaster = result.data.reward_master || [];
                     policeUsers = result.data.police_users || [];
 
                     populatePeriods();
@@ -312,23 +311,12 @@
         function populatePeriods() {
             const select = document.getElementById('periodSelect');
 
-            // ใช้ REWARD_MASTER เป็น Source of Truth สำหรับ Dropdown
-            // เรียงล่าสุดก่อน (reverse เพราะ Google Sheet เรียง ascending)
-            const masterPeriods = [...rewardMaster].reverse();
+            // ดึงชื่อรอบทั้งหมดที่มีอยู่ใน WALL_OF_FAME และตัดตัวซ้ำ
+            const existingPeriods = [...new Set(wallOfFameData.map(d => d.PERIOD))].reverse();
 
             let optionsHtml = '<option value="">-- เลือกงวดรางวัล --</option>';
 
-            if (masterPeriods.length > 0) {
-                // โชว์ทุกงวดใน REWARD_MASTER (ไม่ว่าจะมีข้อมูลใน WALL_OF_FAME หรือไม่)
-                masterPeriods.forEach(m => {
-                    const label = m.LABEL || '';
-                    const hasData = wallOfFameData.some(d => d.PERIOD === label);
-                    // ถ้ายังไม่มีข้อมูลให้แสดง icon บอก
-                    optionsHtml += `<option value="${label}">${label}${hasData ? '' : ' (ยังไม่มีข้อมูล)'}</option>`;
-                });
-            } else {
-                // Fallback: ดึงจากข้อมูลที่มีใน WALL_OF_FAME แทน
-                const existingPeriods = [...new Set(wallOfFameData.map(d => d.PERIOD))];
+            if (existingPeriods.length > 0) {
                 existingPeriods.forEach(p => {
                     optionsHtml += `<option value="${p}">${p}</option>`;
                 });
@@ -336,12 +324,9 @@
 
             select.innerHTML = optionsHtml;
 
-            // Auto-select งวดล่าสุดที่มีข้อมูลจริงก่อน ถ้าไม่มีก็เลือกตัวแรก
-            const firstWithData = masterPeriods.find(m => wallOfFameData.some(d => d.PERIOD === m.LABEL));
-            if (firstWithData) {
-                select.value = firstWithData.LABEL;
-            } else if (masterPeriods.length > 0) {
-                select.value = masterPeriods[0].LABEL;
+            // เลือกงวดล่าสุดให้เป็นค่าเริ่มต้น
+            if (existingPeriods.length > 0) {
+                select.value = existingPeriods[0];
             }
 
             renderLeaderboard();

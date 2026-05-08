@@ -184,7 +184,7 @@
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             z-index: 99999;
-            display: flex;
+            display: none;
             flex-direction: column;
             justify-content: center;
             align-items: center;
@@ -269,50 +269,53 @@
             </div>
         </div>
 
-        <!-- Calculations Grid -->
-        <div class="row g-4 mb-4">
-            <!-- Calculation Tool (Moved from Dashboard) -->
-            <div class="col-lg-6">
-                <div class="p-card h-100 p-4 shadow-sm" style="border: 2px dashed #cbd5e1;">
+        <!-- Range Calculation Tool -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="p-card p-4 shadow-sm" style="border: 2px dashed var(--police-blue);">
                     <div class="d-flex align-items-center mb-3">
-                        <i class="fa-solid fa-calculator text-primary fs-3 me-3"></i>
+                        <div class="rounded-circle d-flex align-items-center justify-content-center me-3"
+                            style="width: 50px; height: 50px; background: rgba(26, 35, 126, 0.1); color: var(--police-blue);">
+                            <i class="fa-solid fa-calendar-check fs-4"></i>
+                        </div>
                         <div>
-                            <h5 class="fw-bold mb-0">ระบบคำนวณสรุปสัปดาห์ (เงินเดือน)</h5>
-                            <div class="small text-muted">สรุปยอดชั่วโมงการทำงานของสัปดาห์นั้นๆ</div>
+                            <h5 class="fw-800 mb-0">ระบบคำนวณข้อมูลตามช่วงเวลา</h5>
+                            <p class="text-muted small mb-0">เลือกช่วงวันที่ต้องการสรุปผลจาก GLOBAL_LOGS</p>
                         </div>
                     </div>
-                    <div class="input-group">
-                        <select id="calcSheetName" class="form-select form-select-luxe border-0 bg-light fw-bold text-dark">
-                            <option value="">-- เลือกสัปดาห์เพื่อคำนวณ --</option>
-                        </select>
-                        <button class="btn btn-primary px-4 fw-bold" onclick="triggerCalculation()">
-                            สร้างสรุปผล <i class="fa-solid fa-arrow-right ms-1"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Reward Calculation Tool -->
-            <div class="col-lg-6">
-                <div class="p-card h-100 p-4 shadow-sm" style="border: 2px dashed #ffd700;">
-                    <div class="d-flex align-items-center mb-3">
-                        <i class="fa-solid fa-trophy text-warning fs-3 me-3"></i>
-                        <div>
-                            <h5 class="fw-bold mb-0 text-warning" style="text-shadow: 0 1px 2px rgba(0,0,0,0.1)">ยอดรางวัล (Wall of Fame)</h5>
-                            <div class="small text-muted">สรุปยอดประจำงวด 1-10, 11-20, 21-สิ้นเดือน</div>
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="small fw-bold text-muted mb-1">วันที่เริ่มต้น</label>
+                            <input type="date" id="rangeStart"
+                                class="form-control form-control-luxe border-0 bg-light fw-bold">
                         </div>
-                    </div>
-                    <div class="input-group">
-                        <select id="calcRewardPeriod" class="form-select form-select-luxe border-0 bg-light fw-bold text-dark">
-                            <option value="">-- เลือกงวดรางวัล --</option>
-                        </select>
-                        <button class="btn btn-warning px-4 fw-bold text-dark" onclick="triggerRewardCalculation()">
-                            ส่งขึ้น Wall <i class="fa-solid fa-star ms-1"></i>
-                        </button>
+                        <div class="col-md-3">
+                            <label class="small fw-bold text-muted mb-1">วันที่สิ้นสุด</label>
+                            <input type="date" id="rangeEnd"
+                                class="form-control form-control-luxe border-0 bg-light fw-bold">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="small fw-bold text-muted mb-1">ระบุชื่อรอบ (เช่น เมษายน 69)</label>
+                            <input type="text" id="rangeLabel"
+                                class="form-control form-control-luxe border-0 bg-light fw-bold"
+                                placeholder="เมษายน 69">
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end gap-2">
+                            <button class="btn btn-primary fw-bold flex-grow-1" onclick="runCalculation('salary')">
+                                <i class="fa-solid fa-money-bill-wave me-1"></i> Salary
+                            </button>
+                            <button class="btn btn-warning text-dark fw-bold flex-grow-1"
+                                onclick="runCalculation('wall')">
+                                <i class="fa-solid fa-trophy me-1"></i> Wall
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+
+
 
         <div class="search-container">
             <i class="fa-solid fa-search search-icon"></i>
@@ -388,7 +391,7 @@
 
                         <div class="mb-4 text-center">
                             <div class="position-relative d-inline-block">
-                                <img src="" id="modalImgPreview" class="rounded-circle border shadow-sm" 
+                                <img src="" id="modalImgPreview" class="rounded-circle border shadow-sm"
                                     style="width: 80px; height: 80px; object-fit: cover; background: #eee;"
                                     onerror="this.src='https://ui-avatars.com/api/?name=Police&background=random'">
                                 <div class="avatar-circle mx-auto mb-2 d-none"
@@ -400,9 +403,10 @@
                         <input type="hidden" id="editCode">
 
                         <div class="mb-3">
-                            <label class="form-label text-muted small fw-bold">ลิงก์รูปภาพประจำตัว (Discord PIC URL)</label>
-                            <input type="url" class="form-control form-control-luxe" id="editPicUrl" 
-                                placeholder="วางลิงก์รูปภาพที่นี่ (เช่น จาก Discord)" 
+                            <label class="form-label text-muted small fw-bold">ลิงก์รูปภาพประจำตัว (Discord PIC
+                                URL)</label>
+                            <input type="url" class="form-control form-control-luxe" id="editPicUrl"
+                                placeholder="วางลิงก์รูปภาพที่นี่ (เช่น จาก Discord)"
                                 oninput="document.getElementById('modalImgPreview').src = this.value || 'https://ui-avatars.com/api/?name=P&background=random'">
                         </div>
 
@@ -472,6 +476,44 @@
         </div>
     </div>
 
+    <!-- Confirm Logout Modal -->
+    <div class="modal fade" id="confirmLogoutModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-0">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center pt-0">
+                    <div class="mb-4">
+                        <i class="fa-solid fa-circle-exclamation text-danger fa-4x mb-3"></i>
+                        <h4 class="fw-800">ยืนยันการ Force Logout</h4>
+                        <p class="text-muted">คุณแน่ใจหรือไม่ว่าต้องการบังคับให้เจ้าหน้าที่ท่านนี้ออกเวร?</p>
+                        <div class="p-3 bg-light rounded-4 mb-2">
+                            <div class="fw-bold fs-5 text-dark" id="logoutTargetName">--</div>
+                            <div class="small text-muted" id="logoutTargetCode">#--</div>
+                        </div>
+                    </div>
+
+                    <input type="hidden" id="logoutTargetCodeHidden">
+                    <input type="hidden" id="logoutTargetNameHidden">
+
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <button type="button" class="btn btn-light w-100 py-3 fw-bold rounded-4"
+                                data-bs-dismiss="modal">ยกเลิก</button>
+                        </div>
+                        <div class="col-6">
+                            <button type="button" class="btn btn-danger w-100 py-3 fw-bold rounded-4 shadow-sm"
+                                onclick="confirmForceLogout()">
+                                <i class="fa-solid fa-person-walking-arrow-right me-2"></i> ยืนยันออกเวร
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Config & Logic -->
     <script>
         // CONFIG
@@ -483,32 +525,27 @@
         // State
         let policeUsers = [];
         let rankList = [];
-        let allWeeks = [];
-        let rewardList = [];
         let editorModalInstance;
         let rankModalInstance;
+        let confirmLogoutModalInstance;
 
         // Init
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             editorModalInstance = new bootstrap.Modal(document.getElementById('editorModal'));
             rankModalInstance = new bootstrap.Modal(document.getElementById('rankModal'));
+            confirmLogoutModalInstance = new bootstrap.Modal(document.getElementById('confirmLogoutModal'));
 
-            // ดึงข้อมูลเตรียมไว้ล่วงหน้า
-            fetchData();
-
-            // เช็ค Session แอดมินว่าเคยล็อกอินไหม
-            if (localStorage.getItem('police_admin_email')) {
-                // รอให้ข้อมูลโหลดเสร็จก่อนค่อยสลับหน้า
-                setTimeout(() => {
-                    const savedEmail = localStorage.getItem('police_admin_email');
-                    document.getElementById('emailInput').value = savedEmail;
-                    loginWithEmail(true);
-                }, 1000); // ดีเลย์เล็กน้อยรอ fetch API (แบบรวบรัด)
+            const savedAdminEmail = localStorage.getItem('police_admin_email');
+            if (savedAdminEmail) {
+                document.getElementById('emailInput').value = savedAdminEmail;
+                await loginWithEmail(true);
             }
         });
 
-        function loginWithEmail(isAuto = false) {
+        async function loginWithEmail(isAuto = false) {
             const email = document.getElementById('emailInput').value.trim();
+            const loadingOverlay = document.getElementById('loadingOverlay');
+
             if (!email) {
                 if (!isAuto) showToast('error', 'แจ้งเตือน', 'กรุณากรอกอีเมลก่อนดำเนินการ');
                 return;
@@ -516,28 +553,48 @@
 
             const btn = document.getElementById('btnLogin');
             if (btn) btn.disabled = true;
-
-            // ตรวจสอบว่าพบลายชื่อหรือไม่
-            const user = policeUsers.find(u => (u.POLICE_EMAIL || u['E-MAIL'] || '').toLowerCase() === email.toLowerCase());
-
-            if (user) {
-                const rank = user.ROLE || user.RANK || '';
-                // เช็คสิทธิ์: ให้เฉพาะ รอง ผบ. และ ผบ.ตร.
-                if (rank === 'รอง ผบ.' || rank === 'ผบ.ตร.') {
-                    localStorage.setItem('police_admin_email', email);
-                    document.getElementById('view-auth').classList.add('d-none');
-                    document.getElementById('view-main').classList.remove('d-none');
-                    if (!isAuto) showToast('success', 'ยืนยันตัวตนสำเร็จ', `ยินดีต้อนรับ ${user.POLICE_NAME || user.NAME} เข้าสู่โหมดผู้ดูแล`);
-                } else {
-                    showToast('error', 'คุณไม่มีสิทธิ์เข้าถึง', 'ระบบนี้จำกัดสิทธิ์เฉพาะระดับผู้บังคับบัญชาเท่านั้น');
-                    localStorage.removeItem('police_admin_email');
-                }
-            } else {
-                if (!isAuto) showToast('error', 'ไม่พบรายชื่อ', 'อีเมลนี้ไม่มีในระบบฐานข้อมูลกำลังพล');
-                localStorage.removeItem('police_admin_email');
+            if (!isAuto) {
+                loadingOverlay.style.display = 'flex';
+                loadingOverlay.querySelector('div').textContent = 'กำลังตรวจสอบสิทธิ์...';
             }
 
-            if (btn) btn.disabled = false;
+            try {
+                // ✅ ใช้เส้น Login เหมือนหน้า Main (ส่ง Email ไปเช็คโดยตรง)
+                const resp = await fetch(CONFIG.WEB_APP_URL + "?load=login&email=" + encodeURIComponent(email));
+                const result = await resp.json();
+
+                if (result.status === 'success' && result.data.user) {
+                    const user = result.data.user;
+                    const rank = user.ROLE || user.RANK || '';
+
+                    // เช็คสิทธิ์: ให้เฉพาะ รอง ผบ. และ ผบ.ตร. (หรือตำแหน่งอื่นๆ ที่ต้องการ)
+                    if (rank === 'รอง ผบ.' || rank === 'ผบ.ตร.') {
+                        localStorage.setItem('police_admin_email', email);
+
+                        // 🚀 เข้าเงื่อนไขแล้วค่อยดึงข้อมูลทั้งหมดมาจัดการ
+                        await fetchData();
+
+                        document.getElementById('view-auth').classList.add('d-none');
+                        document.getElementById('view-main').classList.remove('d-none');
+                        if (!isAuto) showToast('success', 'ยินดีต้อนรับ', `คุณ ${user.POLICE_NAME || user.NAME} เข้าสู่โหมดผู้ดูแล`);
+                    } else {
+                        showToast('error', 'คุณไม่มีสิทธิ์เข้าถึง', 'ระบบนี้จำกัดสิทธิ์เฉพาะระดับผู้บังคับบัญชาเท่านั้น');
+                        localStorage.removeItem('police_admin_email');
+                    }
+                } else {
+                    if (!isAuto) showToast('error', 'ไม่พบรายชื่อ', result.message || 'อีเมลนี้ไม่มีในระบบฐานข้อมูล');
+                    localStorage.removeItem('police_admin_email');
+                }
+            } catch (e) {
+                console.error("Login Error:", e);
+                if (!isAuto) showToast('error', 'ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อระบบตรวจสอบสิทธิ์ได้');
+            } finally {
+                if (btn) btn.disabled = false;
+                if (!isAuto) {
+                    loadingOverlay.style.display = 'none';
+                    loadingOverlay.querySelector('div').textContent = 'กำลังซิงค์ฐานข้อมูล...';
+                }
+            }
         }
 
         function renderTableRank() {
@@ -657,16 +714,18 @@
                 if (result.status === 'success') {
                     policeUsers = result.data.police_users || [];
                     rankList = result.data.rank_police || [];
-                    allWeeks = (result.data.week_master || []).reverse();
-                    rewardList = (result.data.reward_master || []).reverse();
 
-                    populateWeekDropdown();
-                    populateRewardDropdown();
                     populateRankDropdown();
                     renderTable();
                     renderTableRank();
 
+                    // Set default dates to current month
                     const now = new Date();
+                    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+                    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+                    if (!document.getElementById('rangeStart').value) document.getElementById('rangeStart').value = firstDay;
+                    if (!document.getElementById('rangeEnd').value) document.getElementById('rangeEnd').value = lastDay;
+
                     lastUpdate.textContent = `อัปเดตล่าสุด: ${now.toLocaleTimeString('th-TH')}`;
                 } else {
                     showToast('error', 'ข้อผิดพลาดเซิร์ฟเวอร์', result.message);
@@ -682,54 +741,27 @@
             }
         }
 
-        function populateWeekDropdown() {
-            const select = document.getElementById('calcSheetName');
-            if (!select) return;
-            const currentSelection = select.value;
+        async function runCalculation(type) {
+            const start = document.getElementById('rangeStart').value;
+            const end = document.getElementById('rangeEnd').value;
+            const label = document.getElementById('rangeLabel').value.trim();
 
-            select.innerHTML = '<option value="">-- เลือกสัปดาห์ --</option>' +
-                allWeeks.map(w => `<option value="${w.SHEET_NAME}">${w.SHEET_NAME}</option>`).join('');
-
-            if (currentSelection) select.value = currentSelection;
-        }
-
-        function populateRewardDropdown() {
-            const select = document.getElementById('calcRewardPeriod');
-            if (!select) return;
-            const currentSelection = select.value;
-            
-            // ใช้ข้อมูลจาก REWARD_MASTER ที่ดึงจาก Backend
-            let optionsHtml = '<option value="">-- เลือกงวดรางวัล --</option>';
-            
-            if (rewardList.length === 0) {
-                optionsHtml += '<option value="" disabled>🚫 ไม่พบข้อมูลใน REWARD_MASTER</option>';
-            } else {
-                rewardList.forEach(r => {
-                    const label = r.LABEL || 'ไม่ได้ระบุชื่อ';
-                    const start = r.START_DATE || '';
-                    const end = r.END_DATE || '';
-                    optionsHtml += `<option value="${start}|${end}|${label}">${label}</option>`;
-                });
-            }
-            
-            select.innerHTML = optionsHtml;
-            if (currentSelection) select.value = currentSelection;
-        }
-
-        async function triggerCalculation() {
-            const sheetName = document.getElementById('calcSheetName').value.trim();
-            if (!sheetName) {
-                showToast('error', 'แจ้งเตือน', 'กรุณาเลือกสัปดาห์ที่ต้องการคำนวณ');
+            if (!start || !end || !label) {
+                showToast('error', 'ข้อมูลไม่ครบ', 'กรุณาระบุวันที่เริ่มต้น-สิ้นสุด และชื่อรอบการคำนวณ');
                 return;
             }
 
             try {
-                // Show loading dynamically
                 const loadingOverlay = document.getElementById('loadingOverlay');
                 loadingOverlay.style.display = 'flex';
-                loadingOverlay.querySelector('div').textContent = 'กำลังคำนวณสรุปเวลา...';
+                loadingOverlay.querySelector('div').textContent = `กำลังคำนวณ ${type === 'salary' ? 'Salary' : 'Wall of Fame'}...`;
 
-                const payload = { action: 'summary', sheet: sheetName };
+                const payload = {
+                    action: type === 'salary' ? 'summary_salary' : 'summary_wall',
+                    startDate: start,
+                    endDate: end,
+                    periodLabel: label
+                };
 
                 const response = await fetch(CONFIG.WEB_APP_URL, {
                     method: 'POST',
@@ -740,56 +772,20 @@
                 const result = await response.json();
 
                 if (result.status == 'success') {
-                    showToast('success', 'สำเร็จ', result.message || 'คำนวณเวลาสำเร็จ');
-                    document.getElementById('calcSheetName').value = '';
-                    fetchData(); // Refresh UI
+                    showToast('success', 'คำนวณสำเร็จ', result.message);
                 } else {
-                    throw new Error(result.message || 'ไม่สามารถคำนวณได้');
+                    throw new Error(result.message || 'เกิดข้อผิดพลาดในการคำนวณ');
                 }
             } catch (e) {
                 showToast('error', 'ข้อผิดพลาด', e.message);
             } finally {
                 const loadingOverlay = document.getElementById('loadingOverlay');
                 loadingOverlay.style.display = 'none';
-                loadingOverlay.querySelector('div').textContent = 'กำลังซิงค์ฐานข้อมูล...'; // Reset text
+                loadingOverlay.querySelector('div').textContent = 'กำลังซิงค์ฐานข้อมูล...';
             }
         }
 
-        async function triggerRewardCalculation() {
-            const val = document.getElementById('calcRewardPeriod').value;
-            if (!val) { 
-                showToast('error', 'แจ้งเตือน', 'กรุณาเลือกรอบรางวัล 1-10 ที่ต้องการ'); 
-                return; 
-            }
-            
-            const [start, end, label] = val.split('|');
-            try {
-                const loadingOverlay = document.getElementById('loadingOverlay');
-                loadingOverlay.style.display = 'flex';
-                loadingOverlay.querySelector('div').textContent = 'กำลังคำนวณและอัปเดต Wall of Fame...';
 
-                const payload = { action: 'summary_reward', periodLabel: label, startDate: start, endDate: end };
-
-                const response = await fetch(CONFIG.WEB_APP_URL, {
-                    method: 'POST',
-                    headers: { "Content-Type": "text/plain;charset=utf-8" },
-                    body: JSON.stringify(payload)
-                });
-                const result = await response.json();
-
-                if (result.status == 'success') {
-                    showToast('success', 'ปรับปรุงข้อมูลสำเร็จ', result.message);
-                } else {
-                    throw new Error(result.message || 'ไม่สามารถคำนวณ Wall of Fame ได้');
-                }
-            } catch (e) {
-                showToast('error', 'ข้อผิดพลาด', e.message);
-            } finally {
-                const loadingOverlay = document.getElementById('loadingOverlay');
-                loadingOverlay.style.display = 'none';
-                loadingOverlay.querySelector('div').textContent = 'กำลังซิงค์ฐานข้อมูล...'; 
-            }
-        }
 
         function populateRankDropdown() {
             const select = document.getElementById('editRank');
@@ -825,9 +821,16 @@
                     : `<span class="status-badge status-n"><i class="fa-solid fa-lock me-1"></i> Inactive</span>`;
 
                 const picUrl = u.PIC_URL || '';
-                const avatarThumb = picUrl 
+                const onDuty = u.ON_DULTY || 'N';
+                const avatarThumb = picUrl
                     ? `<img src="${picUrl}" class="avatar-circle shadow-sm" style="object-fit: cover;" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random'">`
                     : `<div class="avatar-circle shadow-sm">${name.charAt(0)}</div>`;
+
+                const forceLogoutBtn = onDuty === 'Y'
+                    ? `<button class="btn btn-sm btn-outline-danger shadow-sm fw-bold border ms-1" onclick="forceLogout('${code}', '${name}')">
+                        <i class="fa-solid fa-person-walking-arrow-right me-1"></i> Force Out
+                       </button>`
+                    : '';
 
                 return `
                     <tr>
@@ -845,6 +848,7 @@
                             <button class="btn btn-sm btn-light shadow-sm fw-bold border" onclick="openEditor('${code}')">
                                 <i class="fa-solid fa-pen text-primary me-1"></i> แก้ไข
                             </button>
+                            ${forceLogoutBtn}
                         </td>
                     </tr>
                 `;
@@ -866,7 +870,7 @@
             document.getElementById('editEmail').value = user.POLICE_EMAIL || user['E-MAIL'] || '';
             document.getElementById('editRank').value = user.ROLE || user.RANK || '';
             document.getElementById('editStatus').value = user.STATUS || user.ACTIVE || 'N';
-            
+
             const pic = user.PIC_URL || '';
             document.getElementById('editPicUrl').value = pic;
             document.getElementById('modalImgPreview').src = pic || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.POLICE_NAME || user.NAME || 'P')}&background=random`;
@@ -914,6 +918,56 @@
             } finally {
                 btnSave.disabled = false;
                 btnSave.innerHTML = '<i class="fa-solid fa-floppy-disk me-2"></i> บันทึกการอัปเดต';
+            }
+        }
+
+        function forceLogout(code, name) {
+            document.getElementById('logoutTargetName').textContent = name;
+            document.getElementById('logoutTargetCode').textContent = `#${code}`;
+            document.getElementById('logoutTargetCodeHidden').value = code;
+            document.getElementById('logoutTargetNameHidden').value = name;
+            confirmLogoutModalInstance.show();
+        }
+
+        async function confirmForceLogout() {
+            const code = document.getElementById('logoutTargetCodeHidden').value;
+            const name = document.getElementById('logoutTargetNameHidden').value;
+
+            confirmLogoutModalInstance.hide();
+
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            loadingOverlay.style.display = 'flex';
+            loadingOverlay.querySelector('div').textContent = 'กำลังดำเนินการ Force Logout...';
+
+            const payload = {
+                action: 'checkin',
+                POLICE_CODE: code,
+                POLICE_NAME: name,
+                checkType: 'OUT'
+            };
+
+            try {
+                const response = await fetch(CONFIG.WEB_APP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    showToast('success', 'สำเร็จ', `บังคับคุณ ${name} ออกเวรเรียบร้อยแล้ว`);
+                    await fetchData(true);
+                } else {
+                    showToast('error', 'ไม่สำเร็จ', result.message || 'เกิดข้อผิดพลาด');
+                    // ถ้าพังอาจจะเพราะสถานะไม่ตรง ให้รีเฟรชข้อมูลล่าสุดกลับมา
+                    await fetchData(true);
+                }
+            } catch (err) {
+                console.error("Force Logout Error:", err);
+                showToast('error', 'ระบบล่ม', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+            } finally {
+                loadingOverlay.style.display = 'none';
+                loadingOverlay.querySelector('div').textContent = 'กำลังซิงค์ฐานข้อมูล...';
             }
         }
 

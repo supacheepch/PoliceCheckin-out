@@ -6,8 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>บันทึกเหตุการณ์/ลงประวัติ | Police Time Checkout</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- FullCalendar -->
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
 
     <style>
         :root {
@@ -18,13 +23,36 @@
             --deep-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
         }
 
-        body { font-family: 'Sarabun', sans-serif; background-color: var(--bg-soft); color: #2c3e50; }
-        .font-inter { font-family: 'Inter', sans-serif; }
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: var(--bg-soft);
+            color: #2c3e50;
+        }
 
-        .p-card { background: #ffffff; border-radius: var(--card-radius); border: none; box-shadow: var(--deep-shadow); }
-        .form-control-luxe { border-radius: 14px; padding: 0.8rem 1.2rem; border: 2px solid #edf2f7; background: #f8fafc; }
-        .form-control-luxe:focus { border-color: var(--police-blue); box-shadow: 0 0 0 4px rgba(26, 35, 126, 0.1); background: #fff; }
-        
+        .font-inter {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .p-card {
+            background: #ffffff;
+            border-radius: var(--card-radius);
+            border: none;
+            box-shadow: var(--deep-shadow);
+        }
+
+        .form-control-luxe {
+            border-radius: 14px;
+            padding: 0.8rem 1.2rem;
+            border: 2px solid #edf2f7;
+            background: #f8fafc;
+        }
+
+        .form-control-luxe:focus {
+            border-color: var(--police-blue);
+            box-shadow: 0 0 0 4px rgba(26, 35, 126, 0.1);
+            background: #fff;
+        }
+
         /* ══ EVENT TIMELINE ══ */
         .timeline {
             position: relative;
@@ -48,7 +76,7 @@
             background: white;
             border-radius: 16px;
             padding: 20px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.03);
             margin-bottom: 25px;
             border: 1px solid #f8f9fa;
         }
@@ -65,39 +93,91 @@
             box-shadow: 0 0 0 4px white, 0 0 0 6px var(--police-light);
         }
 
-        .event-card.event-urgent::before {
+        .event-card.event-story::before {
+            background: var(--police-blue);
+            box-shadow: 0 0 0 4px white, 0 0 0 6px var(--police-light);
+        }
+
+        .event-card.event-carry::before {
             background: #dc3545;
             box-shadow: 0 0 0 4px white, 0 0 0 6px #f8d7da;
         }
 
-        .event-card.event-planning::before {
+        .event-card.event-special::before {
             background: #fd7e14;
             box-shadow: 0 0 0 4px white, 0 0 0 6px #ffe5d0;
         }
 
-        .event-time { font-weight: 800; color: var(--police-blue); margin-bottom: 5px; display: block;}
-        .event-meta { font-size: 0.85rem; color: #6c757d; display: flex; gap: 15px; margin-top: 10px; }
-        .event-meta i { margin-right: 5px; color: var(--police-blue); }
+        .event-card.event-general::before {
+            background: #6c757d;
+            box-shadow: 0 0 0 4px white, 0 0 0 6px #e9ecef;
+        }
 
+        .event-time {
+            font-weight: 800;
+            color: var(--police-blue);
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .event-meta {
+            font-size: 0.85rem;
+            color: #6c757d;
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .event-meta i {
+            margin-right: 5px;
+            color: var(--police-blue);
+        }
+
+        /* Calendar Styling */
+        #calendar {
+            background: white;
+            padding: 20px;
+            border-radius: var(--card-radius);
+            font-family: 'Sarabun', sans-serif;
+        }
+
+        .fc-header-toolbar {
+            padding: 10px;
+        }
+
+        .fc-button-primary {
+            background-color: var(--police-blue) !important;
+            border-color: var(--police-blue) !important;
+        }
+
+        .fc-event {
+            cursor: pointer;
+            border-radius: 6px;
+            padding: 2px 5px;
+        }
     </style>
 </head>
 
 <body>
     <div class="container py-4">
-        
+
         <!-- Header -->
         <div class="d-flex align-items-center mb-4">
-            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow" style="width: 60px; height: 60px; font-size: 1.5rem;">
+            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow"
+                style="width: 60px; height: 60px; font-size: 1.5rem;">
                 <i class="fa-solid fa-calendar-days"></i>
             </div>
             <div class="ms-3">
                 <h2 class="fw-800 mb-0">กระดานภารกิจ (Events Log)</h2>
                 <p class="text-muted mb-0">ลงบันทึกเหตุการณ์และแผนงาน เพื่อให้ทุกคนรับทราบ</p>
             </div>
-            <div class="ms-auto">
-                <a href="main.html" class="btn btn-outline-secondary rounded-pill px-4 fw-bold">
+            <div class="ms-auto d-flex gap-2">
+                <button class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" onclick="fetchEvents(true)">
+                    <i class="fa-solid fa-arrows-rotate me-2" id="refreshIcon"></i> รีเฟรชข้อมูล
+                </button>
+                <!-- <a href="main.html" class="btn btn-outline-secondary rounded-pill px-4 fw-bold">
                     <i class="fa-solid fa-arrow-left me-2"></i> กลับหน้าหลัก
-                </a>
+                </a> -->
             </div>
         </div>
 
@@ -106,43 +186,58 @@
             <div class="col-lg-5">
                 <div class="card p-card h-100 border-top border-4 border-primary">
                     <div class="card-body p-4">
-                        <h5 class="fw-800 mb-4"><i class="fa-solid fa-pen-to-square me-2 text-primary"></i> สร้างภารกิจ / แจ้งเหตุ</h5>
-                        
+                        <h5 class="fw-800 mb-4"><i class="fa-solid fa-pen-to-square me-2 text-primary"></i> สร้างภารกิจ
+                            / แจ้งเหตุ</h5>
+
                         <div class="mb-3">
-                            <label class="form-label small fw-bold">ประเภท</label>
-                            <select class="form-control form-control-luxe form-select">
-                                <option value="planning">📋 แผนปฏิบัติงานล่วงหน้า</option>
-                                <option value="patrol">🚓 ออกสายตรวจปกติ</option>
-                                <option value="urgent">🚨 วินิจฉัยข้อสั่งการด่วน</option>
+                            <label class="form-label small fw-bold">ประเภทภารกิจ</label>
+                            <select class="form-control form-control-luxe form-select" id="eventType">
+                                <option value="story">⚔️ 1 Story ไฟท์ตรง</option>
+                                <option value="carry">🚑 2 อุ้มเอ๋อ</option>
+                                <option value="special">🌟 3 Event พิเศษ</option>
                                 <option value="general">📝 บันทึกทั่วไป</option>
                             </select>
                         </div>
 
                         <div class="mb-3">
+                            <label class="form-label small fw-bold">หัวข้อภารกิจ</label>
+                            <input type="text" class="form-control form-control-luxe" id="eventTitle"
+                                placeholder="เช่น ระงับเหตุทะเลาะวิวาท">
+                        </div>
+
+                        <div class="mb-3">
                             <label class="form-label small fw-bold">รายละเอียดภารกิจ</label>
-                            <textarea class="form-control form-control-luxe" rows="3" placeholder="เช่น ตั้งด่านตรวจกวดขันวินัยจราจรจุด A"></textarea>
+                            <textarea class="form-control form-control-luxe" id="eventDetails" rows="3"
+                                placeholder="รายละเอียดเพิ่มเติม..."></textarea>
                         </div>
 
                         <div class="row g-3 mb-3">
-                            <div class="col-6">
+                            <div class="col-4">
                                 <label class="form-label small fw-bold">วันที่</label>
-                                <input type="date" class="form-control form-control-luxe">
+                                <input type="date" class="form-control form-control-luxe" id="eventDate">
                             </div>
-                            <div class="col-6">
-                                <label class="form-label small fw-bold">เวลา</label>
-                                <input type="time" class="form-control form-control-luxe">
+                            <div class="col-4">
+                                <label class="form-label small fw-bold">เวลาเริ่ม</label>
+                                <input type="time" class="form-control form-control-luxe" id="eventStartTime">
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label small fw-bold">เวลาสิ้นสุด</label>
+                                <input type="time" class="form-control form-control-luxe" id="eventEndTime">
                             </div>
                         </div>
 
                         <div class="mb-4">
                             <label class="form-label small fw-bold">สถานที่ / พิกัด</label>
                             <div class="input-group">
-                                <span class="input-group-text bg-transparent border-0"><i class="fa-solid fa-location-dot text-danger"></i></span>
-                                <input type="text" class="form-control form-control-luxe" placeholder="ระบุสถานที่">
+                                <span class="input-group-text bg-transparent border-0"><i
+                                        class="fa-solid fa-location-dot text-danger"></i></span>
+                                <input type="text" class="form-control form-control-luxe" id="eventLocation"
+                                    placeholder="ระบุสถานที่">
                             </div>
                         </div>
 
-                        <button class="btn btn-primary w-100 rounded-pill py-3 fw-bold fs-6 shadow-sm shadow">
+                        <button class="btn btn-primary w-100 rounded-pill py-3 fw-bold fs-6 shadow-sm shadow"
+                            id="btnPost" onclick="submitEvent()">
                             <i class="fa-solid fa-bullhorn me-2"></i> ประกาศภารกิจ
                         </button>
                     </div>
@@ -153,48 +248,330 @@
             <div class="col-lg-7">
                 <div class="card p-card h-100">
                     <div class="card-body p-4">
-                        <h5 class="fw-800 mb-4"><i class="fa-solid fa-list-check me-2 text-primary"></i> ภารกิจล่าสุดของสถานี</h5>
-                        
-                        <div class="timeline">
-                            
-                            <!-- Item 1 -->
-                            <div class="event-card event-urgent">
-                                <span class="event-time font-inter text-danger">15:30 น. (วันนี้)</span>
-                                <h5 class="fw-800 mb-2">ระงับเหตุทะเลาะวิวาท</h5>
-                                <p class="text-muted mb-0 small">ได้รับแจ้งเหตุวัยรุ่นรวมกลุ่มทะเลาะวิวาท จัดชุดสายตรวจเคลื่อนที่เร็วเข้าตรวจสอบระงับเหตุ</p>
-                                <div class="event-meta">
-                                    <span><i class="fa-solid fa-location-dot text-danger"></i> ตลาดหน้าเทศบาล</span>
-                                    <span><i class="fa-solid fa-user-shield text-info"></i> ร.ต.อ. สมชาย และทีม</span>
-                                </div>
-                            </div>
+                        <h5 class="fw-800 mb-4"><i class="fa-solid fa-list-check me-2 text-primary"></i> ภารกิจเร็วๆ นี้
+                            (Upcoming)
+                        </h5>
 
-                            <!-- Item 2 -->
-                            <div class="event-card event-planning">
-                                <span class="event-time font-inter text-warning">20:00 น. (พรุ่งนี้)</span>
-                                <h5 class="fw-800 mb-2">แผนปฏิบัติการตั้งจุดตรวจกวดขัน</h5>
-                                <p class="text-muted mb-0 small">ตั้งด่านตรวจแอลกอฮอล์และป้องกันอาชญากรรม กำลังพล 10 นาย</p>
-                                <div class="event-meta">
-                                    <span><i class="fa-solid fa-location-dot text-danger"></i> ถนนสายหลัก หน้าปั๊ม ปตท.</span>
-                                    <span><i class="fa-solid fa-user-shield text-info"></i> พ.ต.ต. ยอดพิทักษ์ เป็นผู้ควบคุม</span>
-                                </div>
-                            </div>
-
-                            <!-- Item 3 -->
-                            <div class="event-card">
-                                <span class="event-time font-inter">09:00 น. (12 เม.ย.)</span>
-                                <h5 class="fw-800 mb-2">ตรวจเยี่ยมชุมชนสัมพันธ์</h5>
-                                <p class="text-muted mb-0 small">มอบนโยบายและสอบถามปัญหายาเสพติดในชุมชน</p>
-                                <div class="event-meta">
-                                    <span><i class="fa-solid fa-location-dot text-danger"></i> หมู่ 4 บ้านหนองน้ำ</span>
-                                    <span><i class="fa-solid fa-user-shield text-info"></i> สายตรวจเดินเท้า</span>
-                                </div>
-                            </div>
-
+                        <div class="timeline" id="eventTimeline">
+                            <div class="text-center py-5 text-muted">กำลังโหลดข้อมูล...</div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+
+        <!-- CALENDAR SECTION -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card p-card">
+                    <div class="card-body p-4">
+                        <h5 class="fw-800 mb-4"><i class="fa-solid fa-calendar-days me-2 text-primary"></i>
+                            ปฏิทินภารกิจทั้งหมด</h5>
+                        <div id="calendar"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="loadingOverlay"
+            style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 9999; display: none; align-items: center; justify-content: center; flex-direction: column;">
+            <div class="spinner-border text-primary" role="status"></div>
+            <div class="mt-2 fw-bold text-primary">กำลังดำเนินการ...</div>
+        </div>
+
+        <div class="toast-container position-fixed top-0 end-0 p-3" id="toastContainer" style="z-index: 10000;"></div>
+
+        <!-- EVENT DETAILS MODAL -->
+        <div class="modal fade" id="eventDetailModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg" style="border-radius: 24px;">
+                    <div class="modal-header border-0 bg-primary text-white p-4" style="border-radius: 24px 24px 0 0;">
+                        <h5 class="modal-title fw-800" id="modalTitle">รายละเอียดภารกิจ</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <div class="mb-3">
+                            <label
+                                class="small text-muted fw-bold text-uppercase d-block mb-1">เวลาปฏิบัติภารกิจ</label>
+                            <div class="h5 fw-800 text-primary" id="modalTime">--:--</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="small text-muted fw-bold text-uppercase d-block mb-1">สถานที่ / พิกัด</label>
+                            <div class="fw-bold"><i class="fa-solid fa-location-dot text-danger me-2"></i><span
+                                    id="modalLocation">--</span></div>
+                        </div>
+                        <div class="mb-4">
+                            <label
+                                class="small text-muted fw-bold text-uppercase d-block mb-1">รายละเอียดเพิ่มเติม</label>
+                            <div class="p-3 bg-light rounded-3" id="modalDetails">--</div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                            <div class="small text-muted">ผู้ประกาศ: <span class="fw-bold" id="modalReporter">--</span>
+                            </div>
+                            <span class="badge rounded-pill px-3 py-2" id="modalBadge">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            const CONFIG = {
+                WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbzbX9M52hcMTnyFZMZdV86ZuB9qF_uBifuA7vlFSu9J0WwKRPJ-jI39hssIAhavDjb3/exec'
+            };
+
+            let calendar;
+            let allEvents = [];
+
+            document.addEventListener('DOMContentLoaded', function () {
+                initCalendar();
+                fetchEvents();
+
+                // Set default date to today
+                document.getElementById('eventDate').valueAsDate = new Date();
+            });
+
+            function initCalendar() {
+                var calendarEl = document.getElementById('calendar');
+                calendar = new FullCalendar.Calendar(calendarEl, {
+                    initialView: 'dayGridMonth',
+                    locale: 'th',
+                    headerToolbar: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                    },
+                    eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+                    events: [],
+                    eventClick: function (info) {
+                        showEventDetail(info.event);
+                    }
+                });
+                calendar.render();
+            }
+
+            function showEventDetail(event) {
+                const props = event.extendedProps;
+                document.getElementById('modalTitle').textContent = event.title;
+                document.getElementById('modalTime').textContent = `${event.start.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} ${event.end ? '- ' + event.end.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : ''} น.`;
+                document.getElementById('modalLocation').textContent = props.location || 'ไม่ระบุสถานที่';
+                document.getElementById('modalDetails').textContent = props.details || 'ไม่มีรายละเอียดเพิ่มเติม';
+                document.getElementById('modalReporter').textContent = props.reporter || 'ไม่ทราบชื่อ';
+
+                const badge = document.getElementById('modalBadge');
+                badge.textContent = (event.extendedProps.type || 'general').toUpperCase();
+                badge.style.backgroundColor = event.backgroundColor;
+                badge.style.color = 'white';
+
+                const modal = new bootstrap.Modal(document.getElementById('eventDetailModal'));
+                modal.show();
+            }
+
+            async function fetchEvents(isManual = false) {
+                const refreshIcon = document.getElementById('refreshIcon');
+                if (isManual && refreshIcon) refreshIcon.classList.add('fa-spin');
+
+                try {
+                    const response = await fetch(CONFIG.WEB_APP_URL + "?load=all");
+                    const result = await response.json();
+
+                    if (result.status === 'success') {
+                        // Normalize dates and times
+                        allEvents = (result.data.police_events || []).map(e => {
+                            // Date: DD/MM/YYYY -> YYYY-MM-DD
+                            if (e.DATE && e.DATE.includes('/')) {
+                                const [d, m, y] = e.DATE.split('/');
+                                e.DATE = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+                            }
+
+                            // Time: H:m -> HH:mm
+                            const normalizeTime = (t) => {
+                                if (!t || typeof t !== 'string') return t;
+                                const parts = t.split(':');
+                                if (parts.length < 2) return t;
+                                return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
+                            };
+
+                            e.START_TIME = normalizeTime(e.START_TIME);
+                            e.END_TIME = normalizeTime(e.END_TIME);
+
+                            return e;
+                        });
+
+                        console.log("Normalized Events:", allEvents);
+                        renderTimeline();
+                        updateCalendar();
+                    }
+                } catch (e) {
+                    console.error("Fetch Events Error:", e);
+                    showToast('error', 'ข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลภารกิจได้');
+                } finally {
+                    if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+                }
+            }
+
+            function renderTimeline() {
+                const container = document.getElementById('eventTimeline');
+                const todayStr = new Date().toISOString().split('T')[0];
+
+                // Filter today's events AND upcoming
+                const upcomingEvents = allEvents.filter(e => e.DATE >= todayStr);
+
+                if (upcomingEvents.length === 0) {
+                    container.innerHTML = '<div class="text-center py-5 text-muted">ยังไม่มีภารกิจในอนาคต</div>';
+                    return;
+                }
+
+                // Sort by date then time
+                upcomingEvents.sort((a, b) => {
+                    if (a.DATE !== b.DATE) return a.DATE.localeCompare(b.DATE);
+                    return a.START_TIME.localeCompare(b.START_TIME);
+                });
+
+                container.innerHTML = upcomingEvents.map(e => {
+                    let badgeClass = 'event-general';
+                    let typeLabel = '📝 บันทึกทั่วไป';
+                    if (e.TYPE === 'story') { badgeClass = 'event-story'; typeLabel = '⚔️ 1 Story ไฟท์ตรง'; }
+                    if (e.TYPE === 'carry') { badgeClass = 'event-carry'; typeLabel = '🚑 2 อุ้มเอ๋อ'; }
+                    if (e.TYPE === 'special') { badgeClass = 'event-special'; typeLabel = '🌟 3 Event พิเศษ'; }
+                    if (e.TYPE === 'general') { badgeClass = 'event-general'; typeLabel = '📝 บันทึกทั่วไป'; }
+
+                    const eventDate = new Date(e.DATE);
+                    const dateDisplay = eventDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+
+                    return `
+                    <div class="event-card ${badgeClass}">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="event-time font-inter mb-0">${e.START_TIME} - ${e.END_TIME || '??:??'} น.</span>
+                            <span class="badge bg-light text-dark rounded-pill px-2 py-1 small fw-bold">${dateDisplay}</span>
+                        </div>
+                        <div class="small fw-bold mb-1 opacity-75">${typeLabel}</div>
+                        <h5 class="fw-800 mb-2">${e.TITLE}</h5>
+                        <p class="text-muted mb-0 small">${e.DETAILS}</p>
+                        <div class="event-meta">
+                            <span><i class="fa-solid fa-location-dot text-danger"></i> ${e.LOCATION}</span>
+                            <span><i class="fa-solid fa-user-shield text-info"></i> ${e.REPORTER}</span>
+                        </div>
+                    </div>
+                `;
+                }).join('');
+            }
+
+            function updateCalendar() {
+                if (!calendar) return;
+
+                const fcEvents = allEvents.map(e => ({
+                    id: e.EVENT_ID,
+                    title: e.TITLE,
+                    start: `${e.DATE}T${e.START_TIME || '00:00'}`,
+                    end: e.END_TIME ? `${e.DATE}T${e.END_TIME}` : null,
+                    allDay: !e.START_TIME,
+                    display: 'block',
+                    extendedProps: {
+                        details: e.DETAILS,
+                        location: e.LOCATION,
+                        reporter: e.REPORTER,
+                        type: e.TYPE
+                    },
+                    color: getEventColor(e.TYPE)
+                }));
+
+                console.log("FullCalendar Events:", fcEvents);
+
+                // Clear and add new events
+                calendar.getEventSources().forEach(source => source.remove());
+                calendar.addEventSource(fcEvents);
+            }
+
+            function getEventColor(type) {
+                switch (type) {
+                    case 'story': return '#1a237e';
+                    case 'carry': return '#dc3545';
+                    case 'special': return '#fd7e14';
+                    default: return '#6c757d';
+                }
+            }
+
+            async function submitEvent() {
+
+
+                const payload = {
+                    action: 'manageEvent',
+                    subAction: 'ADD',
+                    TYPE: document.getElementById('eventType').value,
+                    TITLE: document.getElementById('eventTitle').value.trim(),
+                    DETAILS: document.getElementById('eventDetails').value.trim(),
+                    DATE: document.getElementById('eventDate').value,
+                    START_TIME: document.getElementById('eventStartTime').value,
+                    END_TIME: document.getElementById('eventEndTime').value,
+                    LOCATION: document.getElementById('eventLocation').value.trim(),
+                    REPORTER: 'ระบบ'
+                };
+
+                if (!payload.TITLE || !payload.DATE || !payload.START_TIME) {
+                    showToast('error', 'ข้อมูลไม่ครบ', 'กรุณาระบุหัวข้อ วันที่ และเวลาเริ่ม');
+                    return;
+                }
+
+                toggleLoading(true);
+
+                try {
+                    const response = await fetch(CONFIG.WEB_APP_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        showToast('success', 'สำเร็จ', 'ประกาศภารกิจเรียบร้อยแล้ว');
+                        clearForm();
+                        await fetchEvents();
+                    } else {
+                        showToast('error', 'ไม่สำเร็จ', result.message);
+                    }
+                } catch (e) {
+                    console.error("Submit Event Error:", e);
+                    showToast('error', 'ระบบล่ม', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+                } finally {
+                    toggleLoading(false);
+                }
+            }
+
+            function clearForm() {
+                document.getElementById('eventTitle').value = '';
+                document.getElementById('eventDetails').value = '';
+                document.getElementById('eventStartTime').value = '';
+                document.getElementById('eventEndTime').value = '';
+                document.getElementById('eventLocation').value = '';
+            }
+
+            function toggleLoading(show) {
+                document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+            }
+
+            function showToast(type, title, msg) {
+                const container = document.getElementById('toastContainer');
+                const color = type === 'success' ? '#2e7d32' : '#c62828';
+                const el = document.createElement('div');
+                el.className = 'toast show bg-white p-card border-0 mb-3 shadow-lg';
+                el.style.minWidth = '300px';
+                el.innerHTML = `
+                <div class="d-flex border-start border-4" style="border-color: ${color} !important;">
+                    <div class="p-3 text-white d-flex align-items-center justify-content-center" style="background: ${color}; width: 50px;">
+                        <i class="fa-solid ${type === 'success' ? 'fa-check' : 'fa-xmark'}"></i>
+                    </div>
+                    <div class="p-3 flex-grow-1">
+                        <strong class="d-block text-dark">${title}</strong>
+                        <small class="text-muted">${msg}</small>
+                    </div>
+                    <button type="button" class="btn-close m-2" onclick="this.closest('.toast').remove()"></button>
+                </div>
+            `;
+                container.appendChild(el);
+                setTimeout(() => el.remove(), 4000);
+            }
+        </script>
 </body>
+
 </html>

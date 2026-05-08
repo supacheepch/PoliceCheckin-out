@@ -46,6 +46,7 @@ function doGet(e) {
     }
     else if (loadType === "leaderboard") {
       result.police_users = fetchSheetData("POLICE_USER");
+      result.reward_master = fetchSheetData("REWARD_MASTER");
       result.wall_of_fame = fetchSheetData("WALL_OF_FAME");
     }
     else if (loadType === "main") {
@@ -58,7 +59,9 @@ function doGet(e) {
     else {
       // Default: ดึงทุกอย่าง (สำหรับ Manager หรือกรณีไม่ได้ระบุ)
       result.police_users = fetchSheetData("POLICE_USER");
+      result.week_master = fetchSheetData("WEEK_MASTER");
       result.rank_police = fetchSheetData("RANK_POLICE");
+      result.reward_master = fetchSheetData("REWARD_MASTER");
       result.wall_of_fame = fetchSheetData("WALL_OF_FAME");
       result.police_events = fetchSheetData("POLICE_EVENTS");
     }
@@ -82,15 +85,13 @@ function doPost(e) {
     return checkInOut(data);
   }
 
-  if (action === "summary_salary") {
-    return summarySalary(data);
+  if (action === "summary") {
+    return actionSummaryTrigger(data.sheet);
   }
 
-  if (action === "summary_wall") {
-    return summaryWallOfFame(data);
+  if (action === "summary_reward") {
+    return actionSummaryReward(data);
   }
-
-
 
   if (action === "updateUser") {
     return updateUser(data);
@@ -116,7 +117,7 @@ function doPost(e) {
 // ============================================
 function getUserLogsList(policeCode) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheetName = "GLOBAL_LOGS";
+  const sheetName = getCurrentWeekSheetName();
   const sheet = ss.getSheetByName(sheetName);
   if (!sheet) return [];
 
@@ -246,6 +247,7 @@ function checkInOut(e) {
       }
       sheet.getRange(foundRow, ON_DULTY_COL).setValue("Y");
       data.STATUS = "IN";
+      logWeekly(data);
       logGlobal(data);
     } else if (type === "OUT") {
       if (currentOnDuty === "N") {
@@ -253,11 +255,13 @@ function checkInOut(e) {
       }
       sheet.getRange(foundRow, ON_DULTY_COL).setValue("N");
       data.STATUS = "OUT";
+      logWeekly(data);
       logGlobal(data);
       const ss = SpreadsheetApp.getActiveSpreadsheet();
-      const globalLogSheet = ss.getSheetByName("GLOBAL_LOGS");
+      const weekSheetName = getCurrentWeekSheetName();
+      const weeklySheet = ss.getSheetByName(weekSheetName);
 
-      const lastIn = getLastCheckIn(globalLogSheet, data.POLICE_CODE);
+      const lastIn = getLastCheckIn(weeklySheet, data.POLICE_CODE);
 
       if (lastIn) {
         const now = new Date();
@@ -302,7 +306,66 @@ function checkInOut(e) {
 }
 
 
+function logWeekly(data) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const now = new Date();
 
+  const { sunday, saturday } = getWeekRange(now);
+
+  const start = Utilities.formatDate(sunday, "Asia/Bangkok", "yyyy-MM-dd");
+  const end = Utilities.formatDate(saturday, "Asia/Bangkok", "yyyy-MM-dd");
+
+  const sheetName = `${start}_to_${end}`;
+
+  let sheet = ss.getSheetByName(sheetName);
+
+  // ❗ ถ้าไม่มี → สร้างใหม่
+  if (!sheet) {
+    sheet = ss.insertSheet(sheetName);
+    ss.moveActiveSheet(ss.getNumSheets());
+
+    sheet.appendRow([
+      "INDEX",
+      "POLICE_CODE",
+      "POLICE_NAME",
+      "STATUS",
+      "DATE",
+      "TIME"
+    ]);
+    sheet.setFrozenRows(1);
+    // 🔥 เพิ่มเข้า WEEK_MASTER
+    let master = ss.getSheetByName("WEEK_MASTER");
+
+    if (!master) {
+      master = ss.insertSheet("WEEK_MASTER");
+      master.appendRow(["ID", "SHEET_NAME"]);
+    }
+
+    const masterRows = master.getDataRange().getValues();
+
+    // 👉 กันซ้ำ sheet name
+    const exists = masterRows.some(r => r[1] === sheetName);
+
+    if (!exists) {
+      const id = master.getLastRow(); // simple index
+      master.appendRow([id, sheetName]);
+    }
+  }
+
+  // 👉 format date + time แยก
+  const dateStr = Utilities.formatDate(now, "Asia/Bangkok", "yyyy-MM-dd");
+  const timeStr = Utilities.formatDate(now, "Asia/Bangkok", "HH:mm:ss");
+  const index = sheet.getLastRow();
+  // 👉 append log
+  sheet.appendRow([
+    index,
+    data.POLICE_CODE,
+    data.POLICE_NAME,
+    data.STATUS,
+    dateStr,
+    timeStr
+  ]);
+}
 
 function logGlobal(data) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -340,7 +403,18 @@ function logGlobal(data) {
   ]);
 }
 
+function getWeekRange(date) {
+  const d = new Date(date);
 
+  const day = d.getDay(); // 0 = Sunday
+  const sunday = new Date(d);
+  sunday.setDate(d.getDate() - day);
+
+  const saturday = new Date(sunday);
+  saturday.setDate(sunday.getDate() + 6);
+
+  return { sunday, saturday };
+}
 
 function parseSheetDateTime(d, t) {
   if (!d || !t) return null;
@@ -443,7 +517,15 @@ function updateWorkHours(sheetUser, foundRow, addedHours) {
   sheetUser.getRange(foundRow, HOURS_COL).setValue(formatted);
 }
 
+function getCurrentWeekSheetName() {
+  const now = new Date();
+  const { sunday, saturday } = getWeekRange(now);
 
+  const start = Utilities.formatDate(sunday, "Asia/Bangkok", "yyyy-MM-dd");
+  const end = Utilities.formatDate(saturday, "Asia/Bangkok", "yyyy-MM-dd");
+
+  return `${start}_to_${end}`;
+}
 
 function timeToMinutes(str) {
   // 🔴 ดักจับถ้าค่าว่าง หรือชีตพังเป็น NaN:NaN ไปแล้วให้เริ่มที่ 0 ใหม่
@@ -462,206 +544,192 @@ function minutesToTime(mins) {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
-// ============================================
-// ฟังก์ชันคำนวณสรุปยอด (Salary & Wall of Fame)
-// ============================================
-function getLogsInRange(startDate, endDate) {
+/**
+ * ฟังก์ชันหลักสำหรับคำนวณเวลาเข้า-ออกงานของตำรวจ
+ * @param {string} payloadSheetName ชื่อชีตข้อมูล log (เช่น '2026-04-19_to_2026-04-25')
+ */
+function actionSummaryTrigger(payloadSheetName) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const logSheet = ss.getSheetByName("GLOBAL_LOGS");
-  if (!logSheet) return [];
+  const logSheet = ss.getSheetByName(payloadSheetName);
+  const userSheet = ss.getSheetByName("POLICE_USER");
 
-  const startObj = new Date(startDate + "T00:00:00+07:00");
-  const endObj = new Date(endDate + "T23:59:59+07:00");
+  if (!logSheet || !userSheet) {
+    return json({ status: "error", message: `ไม่พบชีตข้อมูล ${payloadSheetName} หรือชีต POLICE_USER` });
+  }
 
+  // 1. ดึงข้อมูลรายชื่อตำรวจทั้งหมดจาก POLICE_USER
+  const userData = userSheet.getDataRange().getValues();
+  const policeMap = {};
+
+  for (let i = 1; i < userData.length; i++) {
+    const code = userData[i][0]; // POLICE_CODE (คอลัมน์ A)
+    const name = userData[i][1]; // NAME (คอลัมน์ B)
+    if (code) {
+      policeMap[code] = {
+        name: name,
+        totalMs: 0,
+        lastInTime: null,
+        lastKnownTime: 0,
+        hasAnomaly: false
+      };
+    }
+  }
+
+  // 2. ดึงข้อมูล Log การเข้าออก
+  // ใช้ getValues เพื่อความคงเส้นคงวา (บางที Sheet จัด Format เป็น Date Object มาให้)
   const logData = logSheet.getDataRange().getValues();
-  const filteredLogs = [];
 
+  // แปลง Log ให้อยู่ในรูป Object และคัดให้ได้ Timestamp ที่ถูกต้อง ก่อนจะนำไปจัดเรียง
+  const logs = [];
   for (let r = 1; r < logData.length; r++) {
     const row = logData[r];
-    const timestamp = parseSheetDateTime(row[4], row[5]);
+    const code = row[1];
+    const status = row[3];
 
-    if (timestamp && timestamp.getTime() >= startObj.getTime() && timestamp.getTime() <= endObj.getTime()) {
-      filteredLogs.push({
-        index: Number(row[0]) || r,
-        code: row[1],
-        status: row[3],
+    if (code && status) { // ตรวจสอบว่าแแถวนี้มีข้อมูลจริง ไม่ใช่เซลล์ว่าง
+      const timestamp = parseSheetDateTime(row[4], row[5]);
+
+      if (!timestamp) {
+        // ถ้ารูปแบบวันที่หรือเวลาพัง/อ่านไม่ได้ ให้เตะ Error กลับไปแจ้งที่หน้า Dashboard ทันที
+        return json({
+          status: "error",
+          message: `ไม่สามารถคำนวณได้ ข้อมูลรูปแบบวันที่หรือเวลาผิดพลาด (ไฟล์ ${payloadSheetName} แถวที่ ${r + 1})`
+        });
+      }
+
+      logs.push({
+        index: Number(row[0]) || r, // ใช้ Index จากคอลัมน์แรกสุด หรือใช้ลำดับแถว (r) หากไม่มีค่า
+        code: code,
+        status: status,
         timestamp: timestamp
       });
     }
   }
 
-  // เรียงตามลำดับ Index การเกิดจริง
-  return filteredLogs.sort((a, b) => a.index - b.index);
-}
+  // 🔥 สำคัญ: เปลี่ยนมาเรียงลำดับด้วย Index (ลำดับการเกิดจริง) แทนการเรียงเวลา
+  // เพื่อป้องกันเวลาเจอ Record นาฬิกาเพี้ยนแล้วมันสลับตำแหน่งกันจนเจ๊งคู่ IN-OUT
+  logs.sort((a, b) => a.index - b.index);
 
-function calculateUserHours(logs, policeMap) {
+  // 3. คำนวณเวลาตามเงื่อนไข (ต้องเจอ IN ก่อน OUT) -> ระบบรองรับเข้างานข้ามคืน / ข้ามวันแล้ว
   logs.forEach(log => {
     const code = log.code;
     const status = log.status;
     const currentTimestamp = log.timestamp;
 
-    if (policeMap[code]) {
+    if (policeMap[code] && !isNaN(currentTimestamp.getTime())) {
+      const currentMs = currentTimestamp.getTime();
+
+      // 🕵️‍♂️ ถ้าเวลาปัจจุบัน ย้อนอดีตกลับไปก่อนเวลาล่าสุดที่เคยเจอ (ของคนๆ นี้) -> แปลว่าเวลาเรียงผิดปกติละ!
+      if (policeMap[code].lastKnownTime && currentMs < policeMap[code].lastKnownTime) {
+        policeMap[code].hasAnomaly = true;
+      }
+      policeMap[code].lastKnownTime = Math.max(policeMap[code].lastKnownTime || 0, currentMs);
+
       if (status === "IN") {
+        // บันทึกเวลา IN ล่าสุดไว้ 
         policeMap[code].lastInTime = currentTimestamp;
       } else if (status === "OUT") {
+        // ถ้าเจอ OUT และมี IN ก่อนหน้า ให้คำนวณส่วนต่าง
         if (policeMap[code].lastInTime) {
           const diffMs = currentTimestamp.getTime() - policeMap[code].lastInTime.getTime();
           if (diffMs > 0) {
             policeMap[code].totalMs += diffMs;
+          } else {
+            // ถ้า OUT ดันเกิดก่อน IN (ในคู่การ check-in/out) ก็ให้มาร์คว่าหลอนเหมือนกัน
+            policeMap[code].hasAnomaly = true;
           }
+          // เคลียร์ค่า IN ทิ้ง เพื่อรอรอบถัดไป
           policeMap[code].lastInTime = null;
         }
       }
     }
   });
-}
 
-function summarySalary(data) {
-  try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const userSheet = ss.getSheetByName("POLICE_USER");
-    const logs = getLogsInRange(data.startDate, data.endDate);
+  // 4. สร้างชีตสรุปผล (Summary)
+  const summarySheetName = "Summary_" + payloadSheetName;
+  let summarySheet = ss.getSheetByName(summarySheetName);
 
-    const userData = userSheet.getDataRange().getValues();
-    const policeMap = {};
-    for (let i = 1; i < userData.length; i++) {
-      const code = userData[i][0];
-      if (code) {
-        policeMap[code] = { name: userData[i][1], totalMs: 0, lastInTime: null };
-      }
-    }
+  // หาตำแหน่งของชีตสัปดาห์นั้น (logSheet) 
+  // getIndex() สตาร์ทที่ 1, แต่เวลา insertSheet ใช้ base 0 
+  // ตัวเลข logSheet.getIndex() เลยจะเป็นตำแหน่งทางขวาของ logSheet พอดีเป๊ะ
+  const insertIndex = logSheet.getIndex();
 
-    calculateUserHours(logs, policeMap);
-
-    let sheet = ss.getSheetByName("Salary");
-    if (!sheet) {
-      sheet = ss.insertSheet("Salary");
-      sheet.appendRow(["ID", "SUMMARY_NAME", "POLICE_CODE", "POLICE_NAME", "HOURS_SERVED", "TOTAL_MINUTES", "CAL_START", "CAL_END", "CALCULATED_AT"]);
-      sheet.setFrozenRows(1);
-      sheet.getRange("E:E").setNumberFormat("@"); // HOURS_SERVED as Text
-    }
-
-    // 1. ลบข้อมูลเก่าของรอบเดียวกันเพื่อป้องกันข้อมูลซ้ำ
-    const existingData = sheet.getDataRange().getValues();
-    for (let i = existingData.length - 1; i >= 1; i--) {
-      if (existingData[i][1] === data.periodLabel) {
-        sheet.deleteRow(i + 1);
-      }
-    }
-
-    // 2. เตรียมข้อมูลผู้ใช้ที่มีเวลาทำงาน
-    const users = Object.keys(policeMap).map(code => {
-      const totalMins = Math.floor(policeMap[code].totalMs / (1000 * 60));
-      const h = Math.floor(totalMins / 60);
-      const m = totalMins % 60;
-      return {
-        code: code,
-        name: policeMap[code].name,
-        totalMins: totalMins,
-        formatted: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
-      };
-    }).sort((a, b) => b.totalMins - a.totalMins);
-
-    // 3. บันทึกข้อมูลแบบ Append
-    const now = new Date();
-    let lastId = sheet.getLastRow();
-
-    users.forEach((u, i) => {
-      if (u.totalMins > 0) {
-        sheet.appendRow([
-          lastId + i, // ID แบบรันต่อท้าย
-          data.periodLabel,
-          u.code,
-          u.name,
-          u.formatted,
-          u.totalMins,
-          data.startDate,
-          data.endDate,
-          now
-        ]);
-      }
-    });
-
-    return json({ status: "success", message: `บันทึกข้อมูลสรุปเงินเดือนลงชีต Salary รอบ ${data.periodLabel} เรียบร้อย` });
-  } catch (e) {
-    return json({ status: "error", message: e.toString() });
+  if (!summarySheet) {
+    summarySheet = ss.insertSheet(summarySheetName, insertIndex);
+  } else {
+    summarySheet.clear();
+    // ถ้าย้ายชีตที่สร้างไปแล้ว ให้ใช้คำสั่ง move เพื่อย้ายไปทางขวาต่อจากชีตต้นฉบับ
+    ss.setActiveSheet(summarySheet);
+    // แต่ถ้ามันอยู่คนละที่ไปไกลก็ใช้ moveActiveSheet ย้ายไปต่อตูดได้เลย
+    // บวก 1 เพราะ moveActiveSheet ใช้ base 1
+    const targetMovePos = logSheet.getIndex() + (summarySheet.getIndex() < logSheet.getIndex() ? 0 : 1);
+    ss.moveActiveSheet(targetMovePos);
   }
-}
 
-function summaryWallOfFame(data) {
-  try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const userSheet = ss.getSheetByName("POLICE_USER");
-    const logs = getLogsInRange(data.startDate, data.endDate);
+  // เตรียมข้อมูลก่อนเขียนลงชีต เพื่อนำมาจัดเรียงอันดับ
+  let userSummary = [];
+  for (const code in policeMap) {
+    const totalMinutes = Math.floor(policeMap[code].totalMs / (1000 * 60));
 
-    const userData = userSheet.getDataRange().getValues();
-    const policeMap = {};
-    for (let i = 1; i < userData.length; i++) {
-      const code = userData[i][0];
-      if (code) {
-        policeMap[code] = {
-          name: userData[i][1],
-          picUrl: userData[i][9] || "",
-          totalMs: 0,
-          lastInTime: null
-        };
-      }
-    }
+    // แปลงกลับเป็นชั่วโมงและนาทีตรงๆ
+    const h = Math.floor(totalMinutes / 60);
+    const m = totalMinutes % 60;
 
-    calculateUserHours(logs, policeMap);
+    // สร้างเป็นข้อความเช่น "24:45"
+    const formattedText = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    const remark = policeMap[code].hasAnomaly ? "⚠️ เวลาผิดปกติ" : "";
 
-    let wofSheet = ss.getSheetByName("WALL_OF_FAME");
-    if (!wofSheet) {
-      wofSheet = ss.insertSheet("WALL_OF_FAME");
-      wofSheet.appendRow(["ID", "PERIOD", "RANK", "POLICE_CODE", "NAME", "TOTAL_MINUTES", "HOURS_SERVED", "CAL_START", "CAL_END", "CALCULATED_ON", "PIC_URL"]);
-      wofSheet.setFrozenRows(1);
-      wofSheet.getRange("G:G").setNumberFormat("@"); // HOURS_SERVED as Text
-    }
-
-    // ลบข้อมูลเก่าของรอบเดียวกัน
-    const wofData = wofSheet.getDataRange().getValues();
-    for (let i = wofData.length - 1; i >= 1; i--) {
-      if (wofData[i][1] === data.periodLabel) wofSheet.deleteRow(i + 1);
-    }
-
-    const users = Object.keys(policeMap).map(code => {
-      const totalMins = Math.floor(policeMap[code].totalMs / (1000 * 60));
-      const h = Math.floor(totalMins / 60);
-      const m = totalMins % 60;
-      return {
-        code: code,
-        name: policeMap[code].name,
-        picUrl: policeMap[code].picUrl,
-        totalMins: totalMins,
-        formatted: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
-      };
-    }).sort((a, b) => b.totalMins - a.totalMins);
-
-    const now = new Date();
-    let lastId = wofSheet.getLastRow();
-
-    users.forEach((u, i) => {
-      if (u.totalMins > 0) {
-        wofSheet.appendRow([
-          lastId + i,
-          data.periodLabel,
-          i + 1,
-          u.code,
-          u.name,
-          u.totalMins,
-          u.formatted,
-          data.startDate,
-          data.endDate,
-          now,
-          u.picUrl
-        ]);
-      }
+    userSummary.push({
+      code: code,
+      name: policeMap[code].name,
+      totalMinutes: totalMinutes,
+      formattedText: formattedText,
+      remark: remark
     });
-
-    return json({ status: "success", message: `อัปเดต Wall of Fame รอบ ${data.periodLabel} เรียบร้อย` });
-  } catch (e) {
-    return json({ status: "error", message: e.toString() });
   }
+
+  // 🥇 จัดเรียงจากเข้าเวรมากไปน้อยสุด
+  userSummary.sort((a, b) => b.totalMinutes - a.totalMinutes);
+
+  const output = [["TOP_RANK", "POLICE_CODE", "NAME", "HOURS_SERVED", "TOTAL_MINUTES", "REMARK"]];
+
+  userSummary.forEach((u, i) => {
+    let topRankStr = "-";
+    // ให้อันดับเฉพาะคนที่มีเวลาเข้าเวรมากกว่า 0
+    if (u.totalMinutes > 0 && i < 6) {
+      if (i === 0) topRankStr = "🏆 อันดับ 1";
+      else if (i === 1) topRankStr = "🥈 อันดับ 2";
+      else if (i === 2) topRankStr = "🥉 อันดับ 3";
+      else topRankStr = `🏅 อันดับ ${i + 1}`;
+    }
+
+    output.push([
+      topRankStr,
+      u.code,
+      u.name,
+      u.formattedText,
+      u.totalMinutes,
+      u.remark
+    ]);
+  });
+
+  // เตรียมพื้นที่ตาราง
+  const dataRange = summarySheet.getRange(1, 1, output.length, output[0].length);
+
+  // สำคัญมาก: ล็อค Format ของคอลัมน์ HOURS_SERVED ให้เป็น Plain Text "@" (ข้อความล้วน) ก่อนฝังข้อมูล
+  // HOURS_SERVED ตอนนี้ขยับไปเป็นคอลัมน์ที่ 4 แล้ว (D)
+  if (output.length > 1) {
+    summarySheet.getRange(2, 4, output.length - 1, 1).setNumberFormat("@");
+  }
+
+  // วางข้อมูลทั้งหมดลงตาราง (เมื่อตั้งค่าเป็น Text แล้ว มันจะวางลงไปเป็น "24:45" ตรงๆ)
+  dataRange.setValues(output);
+
+  // 5. ส่ง JSON Response กลับไปให้ Dashboard แจ้งเตือนสถานะสำเร็จ (จำเป็นมาก!)
+  return json({
+    status: "success",
+    message: `สรุปข้อมูลลงชีต ${summarySheetName} เรียบร้อย`
+  });
 }
 
 // ============================================
@@ -778,7 +846,166 @@ function manageRank(data) {
   }
 }
 
+// ============================================
+// ฟังก์ชันคำนวณและสรุปยอดรางวัล (Wall of Fame)
+// ============================================
+function actionSummaryReward(data) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const logSheet = ss.getSheetByName("GLOBAL_LOGS");
+    const userSheet = ss.getSheetByName("POLICE_USER");
 
+    if (!logSheet || !userSheet) {
+      return json({ status: "error", message: "ไม่พบชีต GLOBAL_LOGS หรือ POLICE_USER" });
+    }
+
+    // 1. ดึงผู้เข้าใช้อ้างอิง
+    const userData = userSheet.getDataRange().getValues();
+    const policeMap = {};
+
+    for (let i = 1; i < userData.length; i++) {
+      const code = userData[i][0];
+      const name = userData[i][1];
+      const picUrl = userData[i][9] || ""; // คอลัมน์ที่ 10 (J: PIC_URL)
+
+      if (code) {
+        policeMap[code] = {
+          name: name,
+          picUrl: picUrl,
+          totalMs: 0,
+          lastInTime: null,
+        };
+      }
+    }
+
+    // 2. ตั้งค่าขอบเขตเวลา
+    const startObj = new Date(data.startDate + "T00:00:00+07:00");
+    const endObj = new Date(data.endDate + "T23:59:59+07:00");
+
+    const logData = logSheet.getDataRange().getValues();
+    const logs = [];
+
+    // ลูปแค่ข้อมูลที่มี Date Time อยู่ในช่วง (Filter phase)
+    for (let r = 1; r < logData.length; r++) {
+      const row = logData[r];
+      const code = row[1];
+      const status = row[3];
+      if (code && status) {
+        const timestamp = parseSheetDateTime(row[4], row[5]);
+        if (timestamp && timestamp.getTime() >= startObj.getTime() && timestamp.getTime() <= endObj.getTime()) {
+          logs.push({
+            index: Number(row[0]) || r,
+            code: code,
+            status: status,
+            timestamp: timestamp
+          });
+        }
+      }
+    }
+
+    logs.sort((a, b) => a.index - b.index);
+
+    // 3. คำนวณ
+    logs.forEach(log => {
+      const code = log.code;
+      const status = log.status;
+      const currentTimestamp = log.timestamp;
+
+      if (policeMap[code]) {
+        if (status === "IN") {
+          policeMap[code].lastInTime = currentTimestamp;
+        } else if (status === "OUT") {
+          if (policeMap[code].lastInTime) {
+            const diffMs = currentTimestamp.getTime() - policeMap[code].lastInTime.getTime();
+            if (diffMs > 0) {
+              policeMap[code].totalMs += diffMs;
+            }
+            // รีเซ็ตเพื่อรอรอบต่อไป
+            policeMap[code].lastInTime = null;
+          }
+        }
+      }
+    });
+
+    // 4. บันทึกลง WALL_OF_FAME
+    let wofSheet = ss.getSheetByName("WALL_OF_FAME");
+    if (!wofSheet) {
+      wofSheet = ss.insertSheet("WALL_OF_FAME", ss.getNumSheets());
+      wofSheet.appendRow([
+        "PERIOD",
+        "RANK",
+        "POLICE_CODE",
+        "NAME",
+        "TOTAL_MINUTES",
+        "HOURS_SERVED",
+        "CALCULATED_ON",
+        "PIC_URL"
+      ]);
+      wofSheet.setFrozenRows(1);
+    }
+
+    // สำคัญ: บังคับหัวคอลัมน์ A (PERIOD), F (HOURS_SERVED) เป็น Text เสมอ ป้องกันการแปลผิดเป็นวันที่
+    wofSheet.getRange("A:A").setNumberFormat("@");
+    wofSheet.getRange("F:F").setNumberFormat("@");
+    wofSheet.getRange("G:G").setNumberFormat("yyyy-mm-dd hh:mm:ss");
+
+    // Clear Previous records of the same period
+    const wofData = wofSheet.getDataRange().getValues();
+    const rowsToDelete = [];
+    for (let i = wofData.length - 1; i >= 1; i--) {
+      if (wofData[i][0] === data.periodLabel) {
+        rowsToDelete.push(i + 1); // +1 for 1-based index
+      }
+    }
+    // ไล่ลบจากข้างล่างขึ้นข้างบน เพื่อไม่ให้บรรทัดรวน
+    rowsToDelete.forEach(rowIdx => {
+      wofSheet.deleteRow(rowIdx);
+    });
+
+    // ลำดับและเตรียม Payload
+    let userSummary = [];
+    for (const code in policeMap) {
+      const totalMinutes = Math.floor(policeMap[code].totalMs / (1000 * 60));
+      if (totalMinutes > 0) {
+        const h = Math.floor(totalMinutes / 60);
+        const m = totalMinutes % 60;
+        const formattedText = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+
+        userSummary.push({
+          code: code,
+          name: policeMap[code].name,
+          picUrl: policeMap[code].picUrl,
+          totalMinutes: totalMinutes,
+          formattedText: formattedText
+        });
+      }
+    }
+
+    userSummary.sort((a, b) => b.totalMinutes - a.totalMinutes);
+
+    const calcOn = new Date();
+    userSummary.forEach((u, i) => {
+      let rankLabel = (i + 1).toString();
+      wofSheet.appendRow([
+        data.periodLabel,
+        rankLabel,
+        u.code,
+        u.name,
+        u.totalMinutes,
+        u.formattedText,
+        calcOn,
+        u.picUrl
+      ]);
+    });
+
+    return json({
+      status: "success",
+      message: `บันทึกข้อมูลโขว์ผลงานบน Wall of Fame รอบ ${data.periodLabel} เรียบร้อย`
+    });
+  } catch (err) {
+    return json({ status: "error", message: err.message });
+  }
+}
 
 // ============================================
 // ฟังก์ชันจัดการภารกิจ (Event Management)

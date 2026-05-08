@@ -422,7 +422,40 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        <!-- Bootstrap Pagination -->
+                        <nav aria-label="Logs pagination" class="mt-4">
+                            <ul id="paginationContainer" class="pagination pagination-sm justify-content-center"></ul>
+                        </nav>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ MODAL: UPCOMING EVENTS ══ -->
+    <div class="modal fade" id="upcomingEventsModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 28px; overflow: hidden;">
+                <div class="modal-header border-0 bg-primary text-white p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-white bg-opacity-20 rounded-circle p-3 me-3">
+                            <i class="fa-solid fa-calendar-check fs-4"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title fw-800 mb-0">ภารกิจที่กำลังจะมาถึง (7 วันข้างหน้า)</h5>
+                            <small class="opacity-75">Upcoming Missions & Events</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4 bg-light bg-opacity-50" id="upcomingEventsList"
+                    style="max-height: 60vh; overflow-y: auto;">
+                    <!-- Events injected here -->
+                </div>
+                <div class="modal-footer border-0 p-4">
+                    <button type="button" class="btn btn-primary-luxe rounded-pill px-5 fw-bold"
+                        data-bs-dismiss="modal">รับทราบ</button>
                 </div>
             </div>
         </div>
@@ -437,13 +470,19 @@
             MAX_LOGS: 500
         };
 
-        const State = { logs: [] };
+        const State = {
+            logs: [],
+            currentPage: 1,
+            itemsPerPage: 5
+        };
 
         const Session = {
             getUser() { return JSON.parse(sessionStorage.getItem('police_logged_user') || 'null'); },
             setUser(user) { sessionStorage.setItem('police_logged_user', JSON.stringify(user)); },
             clear() { sessionStorage.removeItem('police_logged_user'); }
         };
+
+        let upcomingModal;
 
         /* ══ UI UTILS ══ */
         const UI = {
@@ -487,19 +526,16 @@
             UI.showLoading();
 
             try {
-                // เรียกใช้ doGet API แทนแบบ CSV
-                const resp = await fetch(CONFIG.WEB_APP_URL + "?load=main");
+                // ✅ เรียกใช้เส้น login ใหม่ตามคำขอ (ยิง email ไปตรวจสอบโดยตรง)
+                const resp = await fetch(CONFIG.WEB_APP_URL + "?load=login&email=" + encodeURIComponent(email));
                 if (!resp.ok) throw new Error('Network response was not ok');
                 const result = await resp.json();
 
                 if (result.status !== 'success') {
-                    throw new Error(result.message || 'ไม่สามารถโหลดข้อมูลได้');
+                    throw new Error(result.message || 'ไม่พบข้อมูลผู้ใช้งาน');
                 }
 
-                const officers = result.data.police_users || [];
-
-                // หาผู้ใช้งานอิงตาม POLICE_EMAIL 
-                const match = officers.find(o => (o['POLICE_EMAIL'] || o['E-MAIL'] || '').toLowerCase() == email.toLowerCase());
+                const match = result.data.user;
 
                 if (match) {
                     const status = match.STATUS || match.ACTIVE || 'N';
@@ -513,6 +549,7 @@
                     Session.setUser(match);
                     switchView('main');
                     UI.toast('success', 'ยินดีต้อนรับ', `คุณ ${match.POLICE_NAME || match.NAME} เข้าสู่ระบบสำเร็จ`);
+                    checkUpcomingEvents();
 
                 } else {
                     UI.toast('error', 'ไม่พบรายชื่อ', 'อีเมลนี้ยังไม่ได้ลงทะเบียนในระบบฐานข้อมูล');
@@ -619,7 +656,17 @@
                         await fetchUserLogsFromBackend();
                     }
                 } else {
-                    throw new Error(result.message || 'Server returned an error');
+                    // หากเซิร์ฟเวอร์แจ้ง Error (เช่น สถานะไม่ตรง)
+                    if (result.recentData) {
+                        const currentSession = Session.getUser();
+                        if (currentSession) {
+                            currentSession.ON_DULTY = result.recentData.ON_DULTY;
+                            Session.setUser(currentSession);
+                            renderLogs(); // อัปเดต UI ให้ตรงกับสถานะจริง
+                        }
+                    }
+                    UI.toast('error', 'บันทึกไม่สำเร็จ', result.message || 'เกิดข้อผิดพลาดจากเซิร์ฟเวอร์');
+                    UI.hideLoading();
                 }
             } catch (e) {
                 UI.toast('error', 'บันทึกไม่สำเร็จ', e.message);
@@ -673,14 +720,10 @@
             const u = Session.getUser();
             if (!u) return;
 
-            // ไม่ต้อง filter ใน JS แล้ว เพราะ backend หาของคนๆ นี้มาให้แล้ว
             const myLogs = State.logs;
-
-            // Update Stats
             document.getElementById('statMyCount').textContent = `${myLogs.length} ครั้ง`;
 
             const statusBox = document.getElementById('statMyStatus');
-
             if (u.ON_DULTY == 'Y') {
                 statusBox.innerHTML = '<i class="fa-solid fa-circle-dot animate-pulse me-2"></i> ปฏิบัติหน้าที่อยู่ (ON DUTY)';
                 statusBox.className = 'status-indicator status-on-duty status-glow-on';
@@ -690,13 +733,27 @@
             }
 
             const tbody = document.getElementById('logTbody');
+            const paginator = document.getElementById('paginationContainer');
+
             if (!myLogs.length) {
-                // เปลี่ยนข้อความเพราะตอนนี้ดึงของทั้งสัปดาห์มาโชว์
-                tbody.innerHTML = '<tr><td colspan="3" class="text-center py-5 text-muted small">ยังไม่มีรายการบันทึกในสัปดาห์นี้</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center py-5 text-muted small">ยังไม่มีรายการบันทึกประวัติ</td></tr>';
+                paginator.innerHTML = '';
                 return;
             }
 
-            tbody.innerHTML = myLogs.map(l => `
+            // ══ PAGINATION LOGIC ══
+            const totalItems = myLogs.length;
+            const totalPages = Math.ceil(totalItems / State.itemsPerPage);
+
+            // ป้องกันกรณีหน้าปัจจุบันเกินจำนวนหน้าที่มี (เช่น หลังลบข้อมูล)
+            if (State.currentPage > totalPages) State.currentPage = totalPages;
+            if (State.currentPage < 1) State.currentPage = 1;
+
+            const startIndex = (State.currentPage - 1) * State.itemsPerPage;
+            const endIndex = startIndex + State.itemsPerPage;
+            const pagedLogs = myLogs.slice(startIndex, endIndex);
+
+            tbody.innerHTML = pagedLogs.map(l => `
                 <tr>
                     <td class="ps-0">
                         <span class="badge ${l.type == 'in' ? 'bg-success' : 'bg-danger'} rounded-pill px-3 py-2 fw-bold" style="min-width: 90px;">
@@ -707,6 +764,50 @@
                     <td class="text-end text-muted small fw-500">${l.date}</td>
                 </tr>
             `).join('');
+
+            // ══ RENDER BOOTSTRAP PAGINATION ══
+            if (totalPages <= 1) {
+                paginator.innerHTML = '';
+                return;
+            }
+
+            let pgHtml = `
+                <li class="page-item ${State.currentPage === 1 ? 'disabled' : ''}">
+                    <span class="page-link border-0 rounded-3 me-1" style="cursor: pointer;" onclick="changePage(${State.currentPage - 1})">
+                        <i class="fa-solid fa-chevron-left small"></i>
+                    </span>
+                </li>
+            `;
+
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= State.currentPage - 1 && i <= State.currentPage + 1)) {
+                    pgHtml += `
+                        <li class="page-item ${i === State.currentPage ? 'active' : ''}">
+                            <span class="page-link border-0 rounded-3 mx-1 fw-bold" style="cursor: pointer;" onclick="changePage(${i})">${i}</span>
+                        </li>
+                    `;
+                } else if (i === State.currentPage - 2 || i === State.currentPage + 2) {
+                    pgHtml += `<li class="page-item disabled"><span class="page-link border-0 bg-transparent">...</span></li>`;
+                }
+            }
+
+            pgHtml += `
+                <li class="page-item ${State.currentPage === totalPages ? 'disabled' : ''}">
+                    <span class="page-link border-0 rounded-3 ms-1" style="cursor: pointer;" onclick="changePage(${State.currentPage + 1})">
+                        <i class="fa-solid fa-chevron-right small"></i>
+                    </span>
+                </li>
+            `;
+            paginator.innerHTML = pgHtml;
+        }
+
+        function changePage(page) {
+            const totalPages = Math.ceil(State.logs.length / State.itemsPerPage);
+            if (page < 1 || page > totalPages) return;
+            State.currentPage = page;
+            renderLogs();
+            // Scroll to table if needed
+            document.getElementById('logTbody').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
         /* ══ CLOCK ══ */
@@ -722,15 +823,128 @@
         }
 
         /* ══ INIT ══ */
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            upcomingModal = new bootstrap.Modal(document.getElementById('upcomingEventsModal'));
             startClock();
             State.logs = []; // ไม่ใช้ LocalStorage แล้ว เพราะดึงใหม่ตลอด
+
             const saved = Session.getUser();
             if (saved) {
+                const pCode = saved['POLICE_CODE'] || saved['CODE'] || '';
+                if (pCode) {
+                    try {
+                        // 🔄 รีเฟรชข้อมูลโปรไฟล์ล่าสุดจากเซิร์ฟเวอร์ (เส้น Profile ใหม่)
+                        const resp = await fetch(CONFIG.WEB_APP_URL + "?load=profile&policecode=" + pCode);
+                        const result = await resp.json();
+                        if (result.status === 'success' && result.data.user) {
+                            Session.setUser(result.data.user);
+                        }
+                    } catch (e) {
+                        console.error("Refresh profile failed:", e);
+                    }
+                }
                 switchView('main');
+                checkUpcomingEvents();
             }
         });
+
+        async function checkUpcomingEvents() {
+            try {
+                // ✅ ใช้เส้น events ใหม่ ดึงเฉพาะข้อมูลภารกิจ (ไม่ดึง All)
+                const resp = await fetch(CONFIG.WEB_APP_URL + "?load=events");
+                const result = await resp.json();
+
+                if (result.status === 'success' && result.data.police_events) {
+                    const events = result.data.police_events;
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+
+                    const next7Days = new Date();
+                    next7Days.setDate(today.getDate() + 7);
+                    next7Days.setHours(23, 59, 59, 999);
+
+                    const upcoming = events.filter(e => {
+                        const eventDate = new Date(e.DATE);
+                        return eventDate >= today && eventDate <= next7Days;
+                    });
+
+                    if (upcoming.length > 0) {
+                        renderUpcomingEvents(upcoming);
+                        upcomingModal.show();
+                    }
+                }
+            } catch (e) {
+                console.error("Check Events Error:", e);
+            }
+        }
+
+        function renderUpcomingEvents(events) {
+            const container = document.getElementById('upcomingEventsList');
+
+            // เรียงตามวันที่และเวลา
+            events.sort((a, b) => {
+                const da = new Date(a.DATE + 'T' + a.START_TIME);
+                const db = new Date(b.DATE + 'T' + b.START_TIME);
+                return da - db;
+            });
+
+            container.innerHTML = events.map(e => {
+                let icon = 'fa-calendar-check';
+                let color = '#6c757d';
+                let badgeClass = 'bg-secondary';
+                let label = 'ภารกิจ';
+
+                if (e.TYPE === 'story') {
+                    icon = 'fa-hand-fist';
+                    color = '#1a237e';
+                    badgeClass = 'bg-primary';
+                    label = '⚔️ 1 Story ไฟท์ตรง';
+                }
+                else if (e.TYPE === 'carry') {
+                    icon = 'fa-truck-medical';
+                    color = '#dc3545';
+                    badgeClass = 'bg-danger';
+                    label = '🚑 2 อุ้มเอ๋อ';
+                }
+                else if (e.TYPE === 'special') {
+                    icon = 'fa-star';
+                    color = '#fd7e14';
+                    badgeClass = 'bg-warning text-dark';
+                    label = '🌟 3 Event พิเศษ';
+                }
+                else if (e.TYPE === 'general') {
+                    icon = 'fa-file-lines';
+                    color = '#6c757d';
+                    badgeClass = 'bg-secondary';
+                    label = '📝 บันทึกทั่วไป';
+                }
+
+                const d = new Date(e.DATE);
+                const dateLabel = d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+
+                return `
+                    <div class="d-flex align-items-start p-3 bg-white mb-3 rounded-4 shadow-sm border-start border-4" style="border-color: ${color} !important;">
+                        <div class="text-center me-3" style="min-width: 65px;">
+                            <div class="h4 fw-800 mb-0" style="color: ${color}">${dateLabel}</div>
+                            <div class="small fw-bold text-muted">${e.START_TIME}</div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="badge ${badgeClass} bg-opacity-10 mb-1 small fw-bold" style="color: ${color} !important;">
+                                <i class="fa-solid ${icon} me-1"></i> ${label}
+                            </div>
+                            <h6 class="fw-800 mb-1 text-dark">${e.TITLE}</h6>
+                            <p class="text-muted small mb-0">${e.DETAILS || 'ไม่มีรายละเอียด'}</p>
+                            <div class="mt-2 small text-muted fw-bold">
+                                <i class="fa-solid fa-location-dot text-danger me-1"></i> ${e.LOCATION || 'ไม่ระบุสถานที่'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
     </script>
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>
